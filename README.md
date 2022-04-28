@@ -1,12 +1,12 @@
 cloud-init-examples
 ===================
 
-This repository includes some example of cloud-init YAML files for use with multipass in creating some virtual machines.
+This repository includes some example of cloud-init YAML files for use with [multipass](https://multipass.run "Multipass website") in creating some virtual machines.
 
 Multipass
 ---------
 
-[Mulitpass](https://multipass.run) is a tool for running and managing Ubuntu VMs. It is a little lighter wait then running VirtualBox, works across operating systems (e.g. Windows, macOS, Linux) and also processor types (e.g. Intel an ARM). This means you can easily run VMs on Raspberry Pi or your favor macOS or Windows machine.  The VM will match your host CPU architecture (i.e. you're not running full emulation but using running as a Intel box on an Intel host or a ARM box on a Raspberry Pi or M1 Mac).  VM's can be easily started, stopped and created.  The setup script is YAML rather than Ruby like with vagrant. There are a small number of commands to learn (i.e. `multipass --help` covers them all). Multipass is NOT as featureful as VirtualBox or Parallels but it does seem to be much lighter weight and the things you can adjust (e.g. RAM, CPU cores) are the ones you likely want to adjust anyway. It is focused on easily bringing up a server like environment for testing and development.
+[Mulitpass](https://multipass.run "Multipass website") is a tool for running and managing Ubuntu VMs. It is a little lighter wait then running VirtualBox, works across operating systems (e.g. Windows, macOS, Linux) and also processor types (e.g. Intel an ARM). This means you can easily run VMs on Raspberry Pi or your favor macOS or Windows machine.  The VM will match your host CPU architecture (i.e. you're not running full emulation but using running as a Intel box on an Intel host or a ARM box on a Raspberry Pi or M1 Mac).  VM's can be easily started, stopped and created.  The setup script is YAML rather than Ruby like with vagrant. There are a small number of commands to learn (i.e. `multipass --help` covers them all). Multipass is NOT as featureful as VirtualBox or Parallels but it does seem to be much lighter weight and the things you can adjust (e.g. RAM, CPU cores) are the ones you likely want to adjust anyway. It is focused on easily bringing up a server like environment for testing and development.
 
 Common multipass commands
 -------------------------
@@ -78,7 +78,7 @@ The YAML file is dev-init.yaml.
 The Invenio VM
 --------------
 
-The invenio VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick.
+The invenio VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick and installs nodejs 14.0.0 so the virtual machine is ready for use in a developer setting.
 
 ```
 bash make-invenio-vm.bash
@@ -89,5 +89,3 @@ Like previous example access with the `multipass` shell command.
 ```
 multipass shell
 ```
-
-
