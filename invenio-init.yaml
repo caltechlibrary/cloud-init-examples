@@ -62,3 +62,4 @@ runcmd:
   - adduser tmorrell docker
   - adduser mhucka docker
   - adduser tkeswick docker
+  - [ python3, -m, pip, install, invenio-cli ]
