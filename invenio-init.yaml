@@ -55,11 +55,10 @@ timezone: US/Pacific
 snap:
   commands:
   - [ install, docker ]
+  - [ install, node, --channel=14/stable, --classic ]
 runcmd:
   - adduser ubuntu docker
   - adduser rsdoiel docker
   - adduser tmorrell docker
   - adduser mhucka docker
   - adduser tkeswick docker
-  - [ curl,  "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh", -o, "/run/nvm-installer/install.sh" ]
-  - [ bash, /run/nvm-installer/install.sh ]
