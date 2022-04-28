@@ -3,6 +3,33 @@ cloud-init-examples
 
 This repository includes some example of cloud-init YAML files for use with [multipass](https://multipass.run "Multipass website") in creating some virtual machines.
 
+Examples
+--------
+
+This repositories includes the follow example virtual machines 
+setup and configurations.
+
+make-minimal-vm.bash, minimal-init.yaml
+: This is a minimal cloud init YAML just a demo of a configuration
+
+make-dev-vm.bash, dev-init.yaml
+: This is a server like development environment for Golang 1.18
+
+make-invenio-vm.bash
+: This is a server like development environment for Invenio-RDM
+
+The next set provide the ability to run as a full GUI environment on macOS or Windows using the Microsoft Remote Desktop viewer or Remmina on Linux. The are based on the previous terminal oriented VMs but add the "ubuntu-desktop" and "xrdp" package to handle the remote displays.  For you to use the GUI versions your VM accounts need to have a password associated with them. You can use the `multipass shell` command to get a shell and then use `sudo passwd USERNAME` to set the password for "USERNAME" (e.g. ubuntu, rsdoiel).
+
+On a M1 Mac running under Monterey you can then use a web browser from the remote displayed VM to test services inside the VM without exposing it to your host machine.
+
+make-dev-gui-vm.bash, dev-gui-init.yaml
+: A development GUI environment for Golang 1.18, uses 4 cores and 8G of RAM
+
+make-invenio-gui-vm.bash, invenio-gui-init.yaml
+: A development GUI environment for Invenio-RDM, uses 4 cores and 8G of RAM
+
+
+
 Multipass
 ---------
 

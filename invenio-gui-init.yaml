@@ -1,6 +1,6 @@
 package_update: true
 package_upgrade: true
-fqdn: invenio.local
+fqdn: invenio-gui.local
 packages:
   - build-essential
   - git
@@ -14,8 +14,8 @@ packages:
   - ssl-cert
   - libapache2-mod-wsgi 
   - imagemagick
-  - ubuntu-desktop
   - xrdp
+  - ubuntu-desktop
 groups:
   - docker
   - staff
