@@ -5,18 +5,10 @@ packages:
   - build-essential
   - git
   - snapcraft
-  - autoconf
-  - automake
   - curl 
-  - wget
-  - tmux
-  - tree
-  - htop
-  - lynx
   - python3-dev
   - python3-pip
   - rsync
-  - libexpat1
   - apache2
   - apache2-utils
   - ssl-cert
@@ -63,15 +55,11 @@ timezone: US/Pacific
 snap:
   commands:
   - [ install, docker ]
-  - [ install, --classic, go ]
-  - [ install, pandoc ]
-  - [ install, datatools ]
-  - [ install, mkpage ]
-  - [ install, eprinttools ]
-  - [ install, dataset ]
 runcmd:
   - adduser ubuntu docker
   - adduser rsdoiel docker
   - adduser tmorrell docker
   - adduser mhucka docker
   - adduser tkeswick docker
+  - [ curl,  "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh", -o, "/run/nvm-installer/install.sh" ]
+  - [ bash, /run/nvm-installer/install.sh ]

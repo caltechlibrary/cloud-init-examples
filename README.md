@@ -78,7 +78,7 @@ The YAML file is dev-init.yaml.
 The Invenio VM
 --------------
 
-The invenio VM is the same as the dev VM except I've added imagemagick to the installed software.
+The invenio VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick.
 
 ```
 bash make-invenio-vm.bash
