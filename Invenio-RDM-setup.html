@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Multipass and Cloud Init Examples</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Multipass and Cloud Init Examples</h1>
+</header>
+<h1 id="invenio-rdm-setup">Invenio RDM setup</h1>
+<p>This is a recipe for getting a development version of Invenio-RDM
+running inside a multipass VM with a GUI environment (using Microsoft
+Remote Desktop) so that you can check out the local development with a
+web browser (e.g. Firefox) without going outside of the VM.</p>
+<h2 id="pre-requisites">Pre-requisites</h2>
+<p>You need the following installed to follow along with these
+instructions. It assumes you’re running macOS though it should work for
+Windows too.</p>
+<ol type="1">
+<li>Install <a href="https://multipass.run"
+title="Multipass website has a link tand instruction to install it based on host operating system, macOS -- Windows or Linux">multipass</a></li>
+<li>Install a remote desktop viewer, e.g. Microsoft Remote Desktop works
+for both Windows and macOS machines. On macOS install it from the app
+store.</li>
+<li>Git client so you can download our cloud init examples repository
+assumeed by these instructions</li>
+</ol>
+<p>If you’re already running Linux (e.g. Ubuntu 20.04 LTS), you can
+install multipass using <a href="https://snapscraft.io"
+title="The snaps website">snap</a>. You can then use a remote desktop
+view that support xrdp protocol such as the <a
+href="https://remmina.org/"
+title="Remote access screen and file sharing to your desktop website">Remmina</a>
+package via <code>sudo apt install remmina</code> or
+<code>sudo snap install remmina</code>.</p>
+<h2 id="vm-setup-recipe">VM Setup Recipe</h2>
+<ol type="1">
+<li>Clone the cloud-init-examples repository</li>
+<li>change to that directory</li>
+<li>Use <code>make-invenio-gui-vm.bash</code> to create the VM and start
+it the first time</li>
+<li>Add a password for the user you’re going to log in with, e.g. ubuntu
+user</li>
+<li>Before you reboot, make sure xrdp and ubuntu-desktop are installed
+and updated</li>
+<li>Reboot the VM just to make sure everything is working correctly</li>
+<li>Use <code>multipass info invenio-gui</code> to find the IP address
+and running state of the VM before proceeding to the next section</li>
+</ol>
+<p>On your host machine where you’ve installed <a
+href="https://multipass.run" title="Multipass website">multipass</a> you
+can issuing the following commands.</p>
+<pre class="shell"><code>git clone git@github.com:caltechlibrary/cloud-init-examples
+cd cloud-init-examples
+./make-invenio-gui-vm.bash
+multipass shell invenio-gui
+sudo passwd ubuntu
+sudo apt update
+sudo apit dist-upgrade
+sudo apt install ubuntu-desktop
+sudo apt install xrdp
+sudo apt autoremove &amp;&amp; sudo apt autoclean
+sudo reboot
+multipass info invenio-gui</code></pre>
+<p>Before we go forward Ubuntu gets updates. It’s a good idea to also
+update your VM’s Ubuntu even when running a LTS.</p>
+<p>NOTE: When you reboot the VM you’ll be dumpted out at your host
+system’s shell. Wait a minute or then use Use the last command
+<code>multipass info invenio-gui</code> to get the reboot status and to
+show the IP addresses we need to connect to the VM with Microsoft Remote
+Desktop.</p>
+<h2 id="microsoft-remote-desktop-recipe">Microsoft Remote Desktop
+Recipe</h2>
+<p>We’re now ready to work with the GUI via Microsoft Remote Desktop (or
+other rdp remote desktop viewer). Lauch the Microsoft Remote Desktop
+application.</p>
+<figure>
+<img src="images/ms-remote-desktop-01.png"
+alt="Image of Microsoft Remote Desktop on macOS" />
+<figcaption aria-hidden="true">Image of Microsoft Remote Desktop on
+macOS</figcaption>
+</figure>
+<p>Click the “+”, then click “Add PC”. A modal dialog will appear to
+define the connection.</p>
+<figure>
+<img src="images/ms-remote-desktop-02.png"
+alt="Image of the connection setup, general setup" />
+<figcaption aria-hidden="true">Image of the connection setup, general
+setup</figcaption>
+</figure>
+<p>Under “PC Name” enter the IP address you discovered from runing
+<code>multipass info invenio-gui</code> previously. In my case the IP
+address assigned was <code>192.168.64.67</code> yours will be different.
+Leave the “Use account” set to “Ask when required”. Below that is a set
+of buttons for a tabbed style dialog. Current the “General” butten is
+active. Click the “display” button.</p>
+<figure>
+<img src="images/ms-remote-desktop-03.png"
+alt="Image of the connection setup, display controls" />
+<figcaption aria-hidden="true">Image of the connection setup, display
+controls</figcaption>
+</figure>
+<p>I set my resolution to 1024x768 and uncheck the “Start session full
+screen” checkbox.</p>
+<figure>
+<img src="images/ms-remote-desktop-04.png"
+alt="Image of the connection setup, display controls edited" />
+<figcaption aria-hidden="true">Image of the connection setup, display
+controls edited</figcaption>
+</figure>
+<p>This should leave you with a new connection, named for the IP
+address.</p>
+<figure>
+<img src="images/ms-remote-desktop-05.png"
+alt="Image of Microsoft Remote Desktop on macOS, after setting up the connection" />
+<figcaption aria-hidden="true">Image of Microsoft Remote Desktop on
+macOS, after setting up the connection</figcaption>
+</figure>
+<p>You can now open your new connection to the desktop. The first time
+you open it you’ll have a dialog to finish setting up the desktop in the
+VM. Click through those as needed (I usually just accept the defaults
+and skip things like allowing location).</p>
+<figure>
+<img src="images/ms-remote-desktop-06.png"
+alt="Image of Ubuntu desktop setup, step 1" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop setup, step
+1</figcaption>
+</figure>
+<figure>
+<img src="images/ms-remote-desktop-07.png"
+alt="Image of Ubuntu desktop setup, step 2" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop setup, step
+2</figcaption>
+</figure>
+<figure>
+<img src="images/ms-remote-desktop-08.png"
+alt="Image of Ubuntu desktop setup, step 3" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop setup, step
+3</figcaption>
+</figure>
+<figure>
+<img src="images/ms-remote-desktop-09.png"
+alt="Image of Ubuntu desktop setup, step 3" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop setup, step
+3</figcaption>
+</figure>
+<p>Sometimes you might need to update the VM further (new releases have
+happened), if you so may see a display like this. If so restart the VM
+by clicking the restart button.</p>
+<figure>
+<img src="images/ms-remote-desktop-10.png"
+alt="Image of Ubuntu desktop, step 4" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, step
+4</figcaption>
+</figure>
+<p>Next you need to start up a “Terminal” so we can install a local
+development of Invenio. To do that click on the “Activities” menu in the
+top left of the screen.</p>
+<figure>
+<img src="images/ms-remote-desktop-11.png"
+alt="Image of Ubuntu desktop, step 4" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, step
+4</figcaption>
+</figure>
+<p>In the upper left corner of the VM’s GUI Window you should see
+“Activities”</p>
+<figure>
+<img src="images/ms-remote-desktop-12.png"
+alt="Image of Ubuntu desktop, no apps running yet" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, no apps running
+yet</figcaption>
+</figure>
+<p>This will make the “dock” appear on the left side of the window.</p>
+<figure>
+<img src="images/ms-remote-desktop-13.png"
+alt="Image of Ubuntu desktop, no apps running yet" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, no apps running
+yet</figcaption>
+</figure>
+<p>You can also type in the name of the application you want to start
+(e.g. Terminal). In the search bubble visible in the middle of the menu
+bar at the top of the window.</p>
+<figure>
+<img src="images/ms-remote-desktop-14.png"
+alt="Image of Ubuntu desktop, no apps running yet" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, no apps running
+yet</figcaption>
+</figure>
+<p>You will need to use the “Terminal” application to follow along with
+the steps to create your Invenio-RDM instance.</p>
+<figure>
+<img src="images/ms-remote-desktop-15.png"
+alt="Image of Ubuntu desktop, with terminal running" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, with terminal
+running</figcaption>
+</figure>
+<h2 id="generating-an-invenio-rdm-instance">Generating an Invenio-RDM
+instance</h2>
+<p>In the terminal window you can following instructions are based on
+https://inveniordm.docs.cern.ch/install/build-setup-run/.</p>
+<p>Below is an example of checking if all the requirements for an
+Invenio Development instance if are available.</p>
+<figure>
+<img src="images/ms-remote-desktop-16.png"
+alt="Image of Ubuntu Desktop with Terminal running" />
+<figcaption aria-hidden="true">Image of Ubuntu Desktop with Terminal
+running</figcaption>
+</figure>
+<p>In the terminal I run the following to bring up a basic development
+instance.</p>
+<pre><code>invenio-cli init rdm -c v8.0</code></pre>
+<p>I answered the questions as follows</p>
+<ul>
+<li>project_name: demo</li>
+<li>project_shortname: demo</li>
+<li>project_site: demo.local</li>
+<li>github_repo: rsdoiel/invenio-demo</li>
+<li>desciption: Demo InvenioRDM Instance</li>
+<li>author_name: Caltech Library</li>
+<li>author_email: rsdoiel@caltech.edu</li>
+<li>year: 2022</li>
+<li>then accepted all the defaults.</li>
+</ul>
+<figure>
+<img src="images/ms-remote-desktop-17.png"
+alt="Image of Ubuntu Desktop and Terminal running, part 1" />
+<figcaption aria-hidden="true">Image of Ubuntu Desktop and Terminal
+running, part 1</figcaption>
+</figure>
+<figure>
+<img src="images/ms-remote-desktop-18.png"
+alt="Image of Ubuntu Desktop and Terminal running, part 2" />
+<figcaption aria-hidden="true">Image of Ubuntu Desktop and Terminal
+running, part 2</figcaption>
+</figure>
+<p>In the terminal run the following commands</p>
+<pre class="shell"><code>cd demo
+invenio-cli install
+invenio-cli services setup
+invenio-cli run</code></pre>
+<p>Sometimes you need to tare down and start over an development
+InvenioRDM instance.</p>
+<pre class="shell"><code>invenio-cli services stop
+invenio-cli services destroy
+invenio-cli destroy</code></pre>
+</body>
+</html>

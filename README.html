@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Multipass and Cloud Init Examples</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Multipass and Cloud Init Examples</h1>
+</header>
+<h1 id="cloud-init-examples">cloud-init-examples</h1>
+<p>This repository includes some example of cloud-init YAML files for
+use with <a href="https://multipass.run"
+title="Multipass website">multipass</a> in creating some virtual
+machines.</p>
+<h2 id="examples">Examples</h2>
+<p>This repositories includes the follow example virtual machines setup
+and configurations.</p>
+<dl>
+<dt>make-minimal-vm.bash, minimal-init.yaml</dt>
+<dd>
+This is a minimal cloud init YAML just a demo of a configuration
+</dd>
+<dt>make-dev-vm.bash, dev-init.yaml</dt>
+<dd>
+This is a server like development environment for Golang 1.18
+</dd>
+<dt>make-invenio-vm.bash</dt>
+<dd>
+This is a server like development environment for Invenio-RDM
+</dd>
+</dl>
+<p>The next set provide the ability to run as a full GUI environment on
+macOS or Windows using the Microsoft Remote Desktop viewer or Remmina on
+Linux. The are based on the previous terminal oriented VMs but add the
+“ubuntu-desktop” and “xrdp” package to handle the remote displays. For
+you to use the GUI versions your VM accounts need to have a password
+associated with them. You can use the <code>multipass shell</code>
+command to get a shell and then use <code>sudo passwd USERNAME</code> to
+set the password for “USERNAME” (e.g. ubuntu, rsdoiel).</p>
+<p>On a M1 Mac running under Monterey you can then use a web browser
+from the remote displayed VM to test services inside the VM without
+exposing it to your host machine.</p>
+<dl>
+<dt>make-dev-gui-vm.bash, dev-gui-init.yaml</dt>
+<dd>
+A development GUI environment for Golang 1.18, uses 4 cores and 8G of
+RAM
+</dd>
+<dt>make-invenio-gui-vm.bash, invenio-gui-init.yaml</dt>
+<dd>
+A development GUI environment for Invenio-RDM, uses 4 cores and 8G of
+RAM
+</dd>
+</dl>
+<h2 id="multipass">Multipass</h2>
+<p><a href="https://multipass.run"
+title="Multipass website">Mulitpass</a> is a tool for running and
+managing Ubuntu VMs. It is a little lighter wait then running
+VirtualBox, works across operating systems (e.g. Windows, macOS, Linux)
+and also processor types (e.g. Intel an ARM). This means you can easily
+run VMs on Raspberry Pi or your favor macOS or Windows machine. The VM
+will match your host CPU architecture (i.e. you’re not running full
+emulation but using running as a Intel box on an Intel host or a ARM box
+on a Raspberry Pi or M1 Mac). VM’s can be easily started, stopped and
+created. The setup script is YAML rather than Ruby like with vagrant.
+There are a small number of commands to learn
+(i.e. <code>multipass --help</code> covers them all). Multipass is NOT
+as featureful as VirtualBox or Parallels but it does seem to be much
+lighter weight and the things you can adjust (e.g. RAM, CPU cores) are
+the ones you likely want to adjust anyway. It is focused on easily
+bringing up a server like environment for testing and development.</p>
+<h2 id="common-multipass-commands">Common multipass commands</h2>
+<p>Get a list of VMs available</p>
+<pre><code>multipass list</code></pre>
+<p>Set a VM as primary (e.g. a machine named “dev”) so you don’t have to
+provide a name with each command.</p>
+<pre><code>multipass set client.primary-name=dev</code></pre>
+<p>Access the primary VM</p>
+<pre><code>multipass shell</code></pre>
+<p>Stop/Start the VM</p>
+<pre><code>multipass stop
+multipass start</code></pre>
+<p>Stop all the VM, delete them and purge them from disk.</p>
+<pre><code>multipass stop --all
+multipass delete --all
+multipass purge</code></pre>
+<h2 id="cloud-init-files">Cloud Init Files</h2>
+<p><a href="https://cloud-init.io">Cloud Init</a> is a specification for
+bringing up a virtual machine (or container) using a YAML syntax. It can
+be relatively simple (see the minimal example) to elaborate (the dev
+example). You can specify things like users, packages to be installed,
+host files to be mounted or even shell scripts to run.</p>
+<h2 id="minimal-py">Minimal Py</h2>
+<p>The <code>make-minimal-py-vm.bash</code> scripts creates a minimal
+python development box described in minimal-py-init.yaml. It doens’t
+create users or install more than python3 and pip.</p>
+<h2 id="the-dev-vm">The Dev VM</h2>
+<p>This will create a VM named “dev”. It includes a more complete server
+development environment including support for Go version 1.18.x. It
+includes examples of installing packages via apt and snaps.</p>
+<pre><code>bash make-dev-vm.bash</code></pre>
+<p>Access VM as Ubuntu user.</p>
+<pre><code>multipass shell</code></pre>
+<p>You can also access via SSH using the IP addressed assigned.</p>
+<p>The YAML file is dev-init.yaml.</p>
+<h2 id="the-invenio-vm">The Invenio VM</h2>
+<p>The invenio VM is similar to the dev VM except it doesn’t install as
+many packages and it adds imagemagick and installs nodejs 14.0.0 so the
+virtual machine is ready for use in a developer setting.</p>
+<pre><code>bash make-invenio-vm.bash</code></pre>
+<p>Like previous example access with the <code>multipass</code> shell
+command.</p>
+<pre><code>multipass shell</code></pre>
+</body>
+</html>
