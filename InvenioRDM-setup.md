@@ -168,6 +168,9 @@ are self signed.)
     xdg-open https://127.0.0.1:5000
 ```
 
+![Image of Ubuntu Desktop and Firefox accessing https://127.0.0.1:5000](images/ms-remote-desktop-19.png)
+
+
 Sometimes you need to tare down and start over an development InvenioRDM instance.
 
 ```shell
