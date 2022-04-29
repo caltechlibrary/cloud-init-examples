@@ -14,8 +14,8 @@ packages:
   - ssl-cert
   - libapache2-mod-wsgi 
   - imagemagick
-  - xrdp
   - ubuntu-desktop
+  - xrdp
 groups:
   - docker
   - staff

@@ -21,8 +21,8 @@ packages:
   - apache2-utils
   - ssl-cert
   - libapache2-mod-wsgi 
-  - xrdp
   - ubuntu-desktop
+  - xrdp
 groups:
   - docker
   - staff
