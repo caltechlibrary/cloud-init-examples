@@ -3,6 +3,8 @@ Invenio RDM setup
 
 This is a recipe for getting a development version of Invenio-RDM running inside a multipass VM with a GUI environment (using Microsoft Remote Desktop) so that you can check out the local development with a web browser (e.g. Firefox) without going outside of the VM.
 
+NOTE: On macOS on a M1 processor the InvenioRDM package may not install properly. YMMV
+
 Pre-requisites
 --------------
 
