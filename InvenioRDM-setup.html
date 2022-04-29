@@ -407,6 +407,11 @@ running, part 2</figcaption>
     invenio-cli install
     invenio-cli services setup
     invenio-cli run</code></pre>
+<p>You can now use <code>xdg-open https://127.0.0.1:5000</code> in the
+terminal to view InvenioRDM with Firefox. (NOTE: you’ll need to click
+through the scarely warnings about the SSL certs, they are self
+signed.)</p>
+<pre class="shell"><code>    xdg-open https://127.0.0.1:5000</code></pre>
 <p>Sometimes you need to tare down and start over an development
 InvenioRDM instance.</p>
 <pre class="shell"><code>    invenio-cli services stop

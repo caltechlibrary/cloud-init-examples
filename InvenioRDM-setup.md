@@ -160,6 +160,14 @@ In the terminal run the following commands
     invenio-cli run
 ```
 
+You can now use `xdg-open https://127.0.0.1:5000` in the terminal to view InvenioRDM with
+Firefox. (NOTE: you'll need to click through the scarely warnings about the SSL certs, they
+are self signed.)
+
+```shell
+    xdg-open https://127.0.0.1:5000
+```
+
 Sometimes you need to tare down and start over an development InvenioRDM instance.
 
 ```shell
