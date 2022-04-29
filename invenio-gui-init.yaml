@@ -57,7 +57,6 @@ timezone: US/Pacific
 snap:
   commands:
   - [ install, docker ]
-  - [ install, node, --channel=14/stable, --classic ]
 runcmd:
   - adduser ubuntu docker
   - adduser rsdoiel docker

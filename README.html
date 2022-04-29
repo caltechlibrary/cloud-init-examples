@@ -210,14 +210,14 @@ RAM
 <h2 id="multipass">Multipass</h2>
 <p><a href="https://multipass.run"
 title="Multipass website">Mulitpass</a> is a tool for running and
-managing Ubuntu VMs. It is a little lighter wait then running
-VirtualBox, works across operating systems (e.g. Windows, macOS, Linux)
-and also processor types (e.g. Intel an ARM). This means you can easily
-run VMs on Raspberry Pi or your favor macOS or Windows machine. The VM
-will match your host CPU architecture (i.e. you’re not running full
-emulation but using running as a Intel box on an Intel host or a ARM box
-on a Raspberry Pi or M1 Mac). VM’s can be easily started, stopped and
-created. The setup script is YAML rather than Ruby like with vagrant.
+managing Ubuntu VMs. It is lighter weight then running VirtualBox, works
+across operating systems (e.g. Windows, macOS, Linux) and processor
+types (e.g. Intel an ARM). This means you can easily run VMs on
+Raspberry Pi or your favor macOS or Windows machine. The VM will match
+your host CPU architecture (i.e. you’re not running full emulation but
+using running as a Intel box on an Intel host or a ARM box on a
+Raspberry Pi or M1 Mac). VM’s can be easily create, started, stopped and
+destroy. The setup script is YAML rather than Ruby like with vagrant.
 There are a small number of commands to learn
 (i.e. <code>multipass --help</code> covers them all). Multipass is NOT
 as featureful as VirtualBox or Parallels but it does seem to be much
@@ -226,19 +226,25 @@ the ones you likely want to adjust anyway. It is focused on easily
 bringing up a server like environment for testing and development.</p>
 <h2 id="common-multipass-commands">Common multipass commands</h2>
 <p>Get a list of VMs available</p>
-<pre><code>multipass list</code></pre>
+<pre class="shell"><code>    multipass list</code></pre>
 <p>Set a VM as primary (e.g. a machine named “dev”) so you don’t have to
-provide a name with each command.</p>
-<pre><code>multipass set client.primary-name=dev</code></pre>
+provide a name with each command. If you want to access a non-primary VM
+then give it a name and pass the name in the command.</p>
+<pre class="shell"><code>    multipass set client.primary-name=dev</code></pre>
 <p>Access the primary VM</p>
-<pre><code>multipass shell</code></pre>
-<p>Stop/Start the VM</p>
-<pre><code>multipass stop
-multipass start</code></pre>
+<pre class="shell"><code>    multipass shell</code></pre>
+<p>Access the “dev” VM</p>
+<pre class="shell"><code>    multipass shell dev</code></pre>
+<p>Stop/Start the primary VM</p>
+<pre class="shell"><code>    multipass stop
+    multipass start</code></pre>
+<p>Stop/Start the “dev” VM</p>
+<pre class="shell"><code>    multipass stop dev
+    multipass start dev</code></pre>
 <p>Stop all the VM, delete them and purge them from disk.</p>
-<pre><code>multipass stop --all
-multipass delete --all
-multipass purge</code></pre>
+<pre class="shell"><code>    multipass stop --all
+    multipass delete --all
+    multipass purge</code></pre>
 <h2 id="cloud-init-files">Cloud Init Files</h2>
 <p><a href="https://cloud-init.io">Cloud Init</a> is a specification for
 bringing up a virtual machine (or container) using a YAML syntax. It can
@@ -253,18 +259,28 @@ create users or install more than python3 and pip.</p>
 <p>This will create a VM named “dev”. It includes a more complete server
 development environment including support for Go version 1.18.x. It
 includes examples of installing packages via apt and snaps.</p>
-<pre><code>bash make-dev-vm.bash</code></pre>
+<pre class="shell"><code>    bash make-dev-vm.bash</code></pre>
 <p>Access VM as Ubuntu user.</p>
-<pre><code>multipass shell</code></pre>
+<pre class="shell"><code>    multipass shell</code></pre>
 <p>You can also access via SSH using the IP addressed assigned.</p>
 <p>The YAML file is dev-init.yaml.</p>
-<h2 id="the-invenio-vm">The Invenio VM</h2>
-<p>The invenio VM is similar to the dev VM except it doesn’t install as
-many packages and it adds imagemagick and installs nodejs 14.0.0 so the
-virtual machine is ready for use in a developer setting.</p>
-<pre><code>bash make-invenio-vm.bash</code></pre>
+<h2 id="the-inveniordm-vm">The InvenioRDM VM</h2>
+<p>The InvenioRDM VM is similar to the dev VM except it doesn’t install
+as many packages and it adds imagemagick and installs nodejs 14.0.0 so
+the virtual machine is ready for use in a developer setting.</p>
+<pre class="shell"><code>    bash make-invenio-vm.bash</code></pre>
 <p>Like previous example access with the <code>multipass</code> shell
 command.</p>
-<pre><code>multipass shell</code></pre>
+<pre class="shell"><code>    multipass shell</code></pre>
+<p>A more complete exploration of running InvenioRDM is found in the <a
+href="InvenioRDM-Setup.html">InvenioRDM-Setup</a></p>
+<h2 id="trouble-shooting">Trouble shooting</h2>
+<p>I’ve run into some challenges on the M1 Mac as well as when using
+Cisco’s VPN. Here’s some helpful links to explore.</p>
+<ul>
+<li><a
+href="https://multipass.run/docs/troubleshooting-networking-on-macos">Trouble
+shooting networking errors on macOS</a></li>
+</ul>
 </body>
 </html>

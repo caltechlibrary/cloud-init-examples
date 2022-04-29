@@ -1,7 +1,7 @@
-Invenio RDM setup
+Invenio RDM Setup
 =================
 
-This is a recipe for getting a development version of Invenio-RDM running inside a multipass VM with a GUI environment (using Microsoft Remote Desktop) so that you can check out the local development with a web browser (e.g. Firefox) without going outside of the VM.
+This is a recipe for getting a development version of InvenioRDM running inside a multipass VM with a GUI environment (using Microsoft Remote Desktop) so that you can check out the local development with a web browser (e.g. Firefox) without going outside of the VM.
 
 NOTE: On macOS on a M1 processor the InvenioRDM package may not install properly. YMMV
 
@@ -24,25 +24,26 @@ VM Setup Recipe
 2. change to that directory
 3. Use `make-invenio-gui-vm.bash` to create the VM and start it the first time
 4. Add a password for the user you're going to log in with, e.g. ubuntu user
-5. Before you reboot, make sure xrdp and ubuntu-desktop are installed and updated
-6. Reboot the VM just to make sure everything is working correctly
-7. Use `multipass info invenio-gui` to find the IP address and running state of the VM before proceeding to the next section
+5. Install `nvm`, the node version manager
+6. Before you reboot, make sure xrdp and ubuntu-desktop are installed and updated
+7. Reboot the VM just to make sure everything is working correctly
+8. Use `multipass info invenio-gui` to find the IP address and running state of the VM before proceeding to the next section
 
 On your host machine where you've installed [multipass](https://multipass.run "Multipass website") you can issuing the following commands.
 
 ```shell
-git clone git@github.com:caltechlibrary/cloud-init-examples
-cd cloud-init-examples
-./make-invenio-gui-vm.bash
-multipass shell invenio-gui
-sudo passwd ubuntu
-sudo apt update
-sudo apit dist-upgrade
-sudo apt install ubuntu-desktop
-sudo apt install xrdp
-sudo apt autoremove && sudo apt autoclean
-sudo reboot
-multipass info invenio-gui
+    git clone git@github.com:caltechlibrary/cloud-init-examples
+    cd cloud-init-examples
+    ./make-invenio-gui-vm.bash
+    multipass shell invenio-gui
+    sudo passwd ubuntu
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+    sudo apt update
+    sudo apt dist-upgrade
+    sudo apt autoremove
+    sudo apt autoclean
+    sudo reboot
+    multipass info invenio-gui
 ```
 
 Before we go forward Ubuntu gets updates. It's a good idea to also update your VM's Ubuntu even when running a LTS.
@@ -60,14 +61,14 @@ Click the "+", then click "Add PC". A modal dialog will appear to define the con
 
 ![Image of the connection setup, general setup](images/ms-remote-desktop-02.png)
 
- Under "PC Name" enter the IP address you discovered from runing `multipass info invenio-gui` previously. In my case the IP address assigned was `192.168.64.67` yours will be different.  Leave the "Use account" set to "Ask when required". Below that is a set of buttons for a tabbed style dialog.
+Under "PC Name" enter the IP address you discovered from runing `multipass info invenio-gui` previously. In my case the IP address assigned was `192.168.64.67` yours will be different.  Leave the "Use account" set to "Ask when required". Below that is a set of buttons for a tabbed style dialog.
  Current the "General" butten is active. Click the "display" button.
 
- ![Image of the connection setup, display controls](images/ms-remote-desktop-03.png)
+![Image of the connection setup, display controls](images/ms-remote-desktop-03.png)
 
- I set my resolution to 1024x768 and uncheck the "Start session full screen" checkbox.
+I set my resolution to 1024x768 and uncheck the "Start session full screen" checkbox.
 
- ![Image of the connection setup, display controls edited](images/ms-remote-desktop-04.png)
+![Image of the connection setup, display controls edited](images/ms-remote-desktop-04.png)
 
 This should leave you with a new connection, named for the IP address.
 
@@ -104,15 +105,24 @@ You can also type in the name of the application you want to start (e.g. Termina
 ![Image of Ubuntu desktop, no apps running yet](images/ms-remote-desktop-14.png)
 
  
- You will need to use the "Terminal" application to follow along with the steps to create your Invenio-RDM instance.
+ You will need to use the "Terminal" application to follow along with the steps to create your InvenioRDM instance.
 
 ![Image of Ubuntu desktop, with terminal running](images/ms-remote-desktop-15.png)
 
 
-Generating an Invenio-RDM instance
+Generating an InvenioRDM instance
 ----------------------------------
 
-In the terminal window you can following instructions are based on https://inveniordm.docs.cern.ch/install/build-setup-run/.
+If you're going to do development InvenioRDM needs NodeJS 14.0.0 to build properly.  We need to install NodeJS
+using `nvm` to meet that requirement.
+
+![Image of Ubuntu desktop, with terminal running](images/ms-remote-desktop-15.png)
+
+```shell
+    nvm install 14.0.0
+```
+
+Now we can follow the terminal window you can following instructions are based on https://inveniordm.docs.cern.ch/install/build-setup-run/.
 
 Below is an example of checking if all the requirements for an Invenio Development instance if are available.
 
@@ -121,7 +131,7 @@ Below is an example of checking if all the requirements for an Invenio Developme
 In the terminal I run the following to bring up a basic development instance.
 
 ```
-invenio-cli init rdm -c v8.0
+    invenio-cli init rdm -c v8.0
 ```
 
 I answered the questions as follows
@@ -144,18 +154,18 @@ I answered the questions as follows
 In the terminal run the following commands
 
 ```shell
-cd demo
-invenio-cli install
-invenio-cli services setup
-invenio-cli run
+    cd demo
+    invenio-cli install
+    invenio-cli services setup
+    invenio-cli run
 ```
 
 Sometimes you need to tare down and start over an development InvenioRDM instance.
 
 ```shell
-invenio-cli services stop
-invenio-cli services destroy
-invenio-cli destroy
+    invenio-cli services stop
+    invenio-cli services destroy
+    invenio-cli destroy
 ```
 
 

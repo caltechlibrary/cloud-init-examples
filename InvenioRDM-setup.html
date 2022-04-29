@@ -162,8 +162,8 @@
 <header id="title-block-header">
 <h1 class="title">Multipass and Cloud Init Examples</h1>
 </header>
-<h1 id="invenio-rdm-setup">Invenio RDM setup</h1>
-<p>This is a recipe for getting a development version of Invenio-RDM
+<h1 id="invenio-rdm-setup">Invenio RDM Setup</h1>
+<p>This is a recipe for getting a development version of InvenioRDM
 running inside a multipass VM with a GUI environment (using Microsoft
 Remote Desktop) so that you can check out the local development with a
 web browser (e.g. Firefox) without going outside of the VM.</p>
@@ -198,6 +198,7 @@ package via <code>sudo apt install remmina</code> or
 it the first time</li>
 <li>Add a password for the user you’re going to log in with, e.g. ubuntu
 user</li>
+<li>Install <code>nvm</code>, the node version manager</li>
 <li>Before you reboot, make sure xrdp and ubuntu-desktop are installed
 and updated</li>
 <li>Reboot the VM just to make sure everything is working correctly</li>
@@ -207,18 +208,18 @@ and running state of the VM before proceeding to the next section</li>
 <p>On your host machine where you’ve installed <a
 href="https://multipass.run" title="Multipass website">multipass</a> you
 can issuing the following commands.</p>
-<pre class="shell"><code>git clone git@github.com:caltechlibrary/cloud-init-examples
-cd cloud-init-examples
-./make-invenio-gui-vm.bash
-multipass shell invenio-gui
-sudo passwd ubuntu
-sudo apt update
-sudo apit dist-upgrade
-sudo apt install ubuntu-desktop
-sudo apt install xrdp
-sudo apt autoremove &amp;&amp; sudo apt autoclean
-sudo reboot
-multipass info invenio-gui</code></pre>
+<pre class="shell"><code>    git clone git@github.com:caltechlibrary/cloud-init-examples
+    cd cloud-init-examples
+    ./make-invenio-gui-vm.bash
+    multipass shell invenio-gui
+    sudo passwd ubuntu
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+    sudo apt update
+    sudo apt dist-upgrade
+    sudo apt autoremove
+    sudo apt autoclean
+    sudo reboot
+    multipass info invenio-gui</code></pre>
 <p>Before we go forward Ubuntu gets updates. It’s a good idea to also
 update your VM’s Ubuntu even when running a LTS.</p>
 <p>NOTE: When you reboot the VM you’ll be dumpted out at your host
@@ -344,16 +345,27 @@ alt="Image of Ubuntu desktop, no apps running yet" />
 yet</figcaption>
 </figure>
 <p>You will need to use the “Terminal” application to follow along with
-the steps to create your Invenio-RDM instance.</p>
+the steps to create your InvenioRDM instance.</p>
 <figure>
 <img src="images/ms-remote-desktop-15.png"
 alt="Image of Ubuntu desktop, with terminal running" />
 <figcaption aria-hidden="true">Image of Ubuntu desktop, with terminal
 running</figcaption>
 </figure>
-<h2 id="generating-an-invenio-rdm-instance">Generating an Invenio-RDM
+<h2 id="generating-an-inveniordm-instance">Generating an InvenioRDM
 instance</h2>
-<p>In the terminal window you can following instructions are based on
+<p>If you’re going to do development InvenioRDM needs NodeJS 14.0.0 to
+build properly. We need to install NodeJS using <code>nvm</code> to meet
+that requirement.</p>
+<figure>
+<img src="images/ms-remote-desktop-15.png"
+alt="Image of Ubuntu desktop, with terminal running" />
+<figcaption aria-hidden="true">Image of Ubuntu desktop, with terminal
+running</figcaption>
+</figure>
+<pre class="shell"><code>    nvm install 14.0.0</code></pre>
+<p>Now we can follow the terminal window you can following instructions
+are based on
 https://inveniordm.docs.cern.ch/install/build-setup-run/.</p>
 <p>Below is an example of checking if all the requirements for an
 Invenio Development instance if are available.</p>
@@ -365,7 +377,7 @@ running</figcaption>
 </figure>
 <p>In the terminal I run the following to bring up a basic development
 instance.</p>
-<pre><code>invenio-cli init rdm -c v8.0</code></pre>
+<pre><code>    invenio-cli init rdm -c v8.0</code></pre>
 <p>I answered the questions as follows</p>
 <ul>
 <li>project_name: demo</li>
@@ -391,14 +403,14 @@ alt="Image of Ubuntu Desktop and Terminal running, part 2" />
 running, part 2</figcaption>
 </figure>
 <p>In the terminal run the following commands</p>
-<pre class="shell"><code>cd demo
-invenio-cli install
-invenio-cli services setup
-invenio-cli run</code></pre>
+<pre class="shell"><code>    cd demo
+    invenio-cli install
+    invenio-cli services setup
+    invenio-cli run</code></pre>
 <p>Sometimes you need to tare down and start over an development
 InvenioRDM instance.</p>
-<pre class="shell"><code>invenio-cli services stop
-invenio-cli services destroy
-invenio-cli destroy</code></pre>
+<pre class="shell"><code>    invenio-cli services stop
+    invenio-cli services destroy
+    invenio-cli destroy</code></pre>
 </body>
 </html>
