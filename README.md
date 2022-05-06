@@ -9,23 +9,23 @@ Examples
 This repositories includes the follow example virtual machines 
 setup and configurations.
 
-make-minimal-vm.bash, minimal-init.yaml
+start-minimal-vm.bash, minimal-init.yaml
 : This is a minimal cloud init YAML just a demo of a configuration
 
-make-dev-vm.bash, dev-init.yaml
+start-dev-server-vm.bash, dev-server-init.yaml
 : This is a server like development environment for Golang 1.18
 
-make-invenio-vm.bash
+start-invenio-server-vm.bash, invenio-server-init.yaml
 : This is a server like development environment for Invenio-RDM
 
 The next set provide the ability to run as a full GUI environment on macOS or Windows using the Microsoft Remote Desktop viewer or Remmina on Linux. The are based on the previous terminal oriented VMs but add the "ubuntu-desktop" and "xrdp" package to handle the remote displays.  For you to use the GUI versions your VM accounts need to have a password associated with them. You can use the `multipass shell` command to get a shell and then use `sudo passwd USERNAME` to set the password for "USERNAME" (e.g. ubuntu, rsdoiel).
 
 On a M1 Mac running under Monterey you can then use a web browser from the remote displayed VM to test services inside the VM without exposing it to your host machine.
 
-make-dev-gui-vm.bash, dev-gui-init.yaml
+start-dev-gui-vm.bash, dev-gui-init.yaml
 : A development GUI environment for Golang 1.18, uses 4 cores and 8G of RAM
 
-make-invenio-gui-vm.bash, invenio-gui-init.yaml
+start-invenio-gui-vm.bash, invenio-gui-init.yaml
 : A development GUI environment for Invenio-RDM, uses 4 cores and 8G of RAM
 
 
@@ -44,12 +44,12 @@ Get a list of VMs available
     multipass list
 ```
 
-Set a VM as primary (e.g. a machine named "dev") so you don't
+Set a VM as primary (e.g. a machine named "dev-server") so you don't
 have to provide a name with each command. If you want to access 
 a non-primary VM then give it a name and pass the name in the command.
 
 ```shell
-    multipass set client.primary-name=dev
+    multipass set client.primary-name=dev-server
 ```
 
 Access the primary VM
@@ -58,10 +58,10 @@ Access the primary VM
     multipass shell
 ```
 
-Access the "dev" VM
+Access the "dev-server" VM
 
 ```shell
-    multipass shell dev
+    multipass shell dev-server
 ```
 
 Stop/Start the primary VM 
@@ -71,11 +71,11 @@ Stop/Start the primary VM
     multipass start
 ```
 
-Stop/Start the "dev" VM
+Stop/Start the "dev-server" VM
 
 ```shell
-    multipass stop dev
-    multipass start dev
+    multipass stop dev-server
+    multipass start dev-server
 ```
 
 Stop all the VM, delete them and purge them from disk.
@@ -95,15 +95,15 @@ Cloud Init Files
 Minimal Py
 ----------
 
-The `make-minimal-py-vm.bash` scripts creates a minimal python development box described in minimal-py-init.yaml. It doens't create users or install more than python3 and pip.
+The `start-minimal-py-vm.bash` scripts creates a minimal python development box described in minimal-py-init.yaml. It doens't create users or install more than python3 and pip.
 
 The Dev VM
 ----------
 
-This will create a VM named "dev". It includes a more complete server development environment including support for Go version 1.18.x.  It includes examples of installing packages via apt and snaps.
+This will create a VM named "dev-server". It includes a more complete server development environment including support for Go version 1.18.x.  It includes examples of installing packages via apt and snaps.
 
 ```shell
-    bash make-dev-vm.bash
+    bash start-dev-server-vm.bash
 ```
 
 Access VM as Ubuntu user.
@@ -114,15 +114,15 @@ Access VM as Ubuntu user.
 
 You can also access via SSH using the IP addressed assigned.
 
-The YAML file is dev-init.yaml.
+The YAML file is dev-server-init.yaml.
 
 The InvenioRDM VM
---------------
+-----------------
 
 The InvenioRDM VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick and installs nodejs 14.0.0 so the virtual machine is ready for use in a developer setting.
 
 ```shell
-    bash make-invenio-vm.bash
+    bash start-invenio-server-vm.bash
 ```
 
 Like previous example access with the `multipass` shell command.
