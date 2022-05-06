@@ -56,6 +56,12 @@ if [ -d Sites ]; then
   multipass mount Sites $MACHINE:Sites
 fi
 
+#
+# Transfer invenio setup instructions to VM
+#
+multipass transfer InvenioRDM-setup.md $MACHINE:.
+multipass transfer InvenioRDM-setup.html $MACHINE:Public/
+
 # 
 # Display state of machine
 #
