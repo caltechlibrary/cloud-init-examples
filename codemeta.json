@@ -6,7 +6,7 @@
     "dateCreated": "2022-04-25",
     "issueTracker": "https://github.com/caltechlibrary/cloud-init-examples/issues",
     "name": "cloud-init-examples",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.",
     "developmentStatus": "concept",
     "programmingLanguage": [
