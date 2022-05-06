@@ -7,11 +7,11 @@ if [ "$1" = "" ]; then
     MACHINE=multipass get client.primary-name
 else
     MACHINE="$1"
-    PRIMARY_NAME=$(multipass get client.primary-name)
-    if [ "${PRIMARY_NAME}" != "$MACHINE" ]; then
-        echo "Changin primary name from $PRIMARY_NAME to $MACHINE"
-        multipass set client.primary-name=$MACHINE
-    fi
+#    PRIMARY_NAME=$(multipass get client.primary-name)
+#    if [ "${PRIMARY_NAME}" != "$MACHINE" ]; then
+#        echo "Changin primary name from $PRIMARY_NAME to $MACHINE"
+#        multipass set client.primary-name=$MACHINE
+#    fi
 fi
 
 #
