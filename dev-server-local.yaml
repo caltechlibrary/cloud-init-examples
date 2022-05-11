@@ -17,6 +17,7 @@ packages:
   - python3-pip
   - pandoc
   - rsync
+  - mysql-server-8.0
   - libexpat1
   - apache2
   - apache2-utils

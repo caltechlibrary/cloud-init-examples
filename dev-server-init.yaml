@@ -18,6 +18,7 @@ packages:
   - pandoc
   - rsync
   - libexpat1
+  - mysql-server-8.0
   - apache2
   - apache2-utils
   - ssl-cert
