@@ -4,7 +4,7 @@
 # Check if we're providing a machine name or using the existing primary name
 #
 if [ "$1" = "" ]; then
-    MACHINE=multipass get client.primary-name
+    MACHINE=$(multipass get client.primary-name)
 else
     MACHINE="$1"
 #    PRIMARY_NAME=$(multipass get client.primary-name)
