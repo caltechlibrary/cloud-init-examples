@@ -31,10 +31,14 @@ if multipass list | grep $MACHINE >/dev/null; then
         exit 1
     esac
 else 
+    CLOUD_INIT="$MACHINE-local.yaml"
+    if [ ! -f "$CLOUD_INIT" ]; then
+        CLOUD_INIT="$MACHINE-init.yaml"
+    fi
     echo "Launching $MACHINE";
     multipass launch --name $MACHINE \
         --cpus 4 --mem 8G --disk 50G \
-        --cloud-init $MACHHINE-init.yaml
+        --cloud-init $CLOUD_INIT
     multipass restart "${MACHINE}"
 fi
 

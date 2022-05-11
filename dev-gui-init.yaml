@@ -27,40 +27,6 @@ groups:
   - docker
   - staff
   - www-data
-users:
-  - default
-  - name: rsdoiel
-    shell: /bin/bash
-    gecos: R. S. Doiel
-    primary_group: staff
-    groups: [ users, staff, adm, sudo, www-data ]
-    ssh_import_id:
-      - gh:rsdoiel
-    sudo: ALL=(ALL) NOPASSWD:ALL
-  - name: tmorrell
-    shell: /bin/bash
-    gecos: Tom Morrell
-    primary_group: staff
-    groups: [ users, staff, adm, sudo, www-data ]
-    ssh_import_id:
-      - gh:tmorrell
-  - name: mhucka
-    shell: /bin/bash
-    gecos: Mike Hucka
-    primary_group: staff
-    groups: [ users, staff, adm, sudo, www-data ]
-    ssh_import_id:
-      - gh:mhucka
-    sudo: ALL=(ALL) NOPASSWD:ALL
-  - name: tkeswick
-    shell: /bin/bash
-    gecos: Tommy Keswick
-    primary_group: staff
-    groups: [ users, staff, adm, sudo, www-data ]
-    ssh_import_id:
-      - gh:t4k
-    sudo: ALL=(ALL) NOPASSWD:ALL
-timezone: US/Pacific
 snap:
   commands:
   - [ install, docker ]
@@ -72,7 +38,5 @@ snap:
   - [ install, dataset ]
 runcmd:
   - adduser ubuntu docker
-  - adduser rsdoiel docker
-  - adduser tmorrell docker
-  - adduser mhucka docker
-  - adduser tkeswick docker
+  - adduser ubuntu staff
+  - adduser ubuntu www-data
