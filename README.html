@@ -192,15 +192,11 @@ you to use the GUI versions your VM accounts need to have a password
 associated with them. You can use the <code>multipass shell</code>
 command to get a shell and then use <code>sudo passwd USERNAME</code> to
 set the password for “USERNAME” (e.g. ubuntu, rsdoiel).</p>
-<p>On a M1 Mac running under Monterey you can then use a web browser
-from the remote displayed VM to test services inside the VM without
-exposing it to your host machine.</p>
+<p>If you would like to have a Ubuntu Desktop available for use in your
+multipass VM Ihave provided several examples. start-dev-gui-vm.bash,
+dev-gui-init.yaml : A development GUI environment for Golang 1.18, uses
+4 cores and 8G of RAM</p>
 <dl>
-<dt>start-dev-gui-vm.bash, dev-gui-init.yaml</dt>
-<dd>
-A development GUI environment for Golang 1.18, uses 4 cores and 8G of
-RAM
-</dd>
 <dt>start-invenio-gui-vm.bash, invenio-gui-init.yaml</dt>
 <dd>
 A development GUI environment for Invenio-RDM, uses 4 cores and 8G of
@@ -274,6 +270,33 @@ command.</p>
 <pre class="shell"><code>    multipass shell</code></pre>
 <p>A more complete exploration of running InvenioRDM is found in the <a
 href="InvenioRDM-Setup.html">InvenioRDM-Setup</a></p>
+<h2 id="general-purpose-bash-scripts">General purpose Bash scripts</h2>
+<p>I have provided three Bash scripts for starting/launching, getting
+info and stopping your multipass VM.</p>
+<ol type="1">
+<li>start-vm.bash - starts an existing or launches a new virtual machine
+based on a related cloud init YAML file</li>
+<li>stats-vm.bash - will return information about the machine (i.e. it
+runs <code>multipass info $MACHINE</code>)</li>
+<li>stop-vm-.bash - will stop the machine</li>
+</ol>
+<p>If you’ve devined a primary name for the machine the Bash scripts can
+be used without any additoinal parameters. If you provide a machine name
+as a parameter then the scripts will work with that machine name.</p>
+<p>For creating new machines (aka multipass launch) the start-vm.bash
+script looks for a cloud init YAML file that defines the new machine. By
+default it first looks for the name <code>$MACHINE-local.yaml</code> and
+if that is not available it looks for <code>$MACHINE-init.yaml</code>.
+The <code>*-init.yaml</code> files provided in this repository are a
+good starting point but the cloud init support in multipass goes much
+further. The YAML file called <code>dev-server-local.yaml</code> is
+provided as an example of including full login setup for the developers
+in the DLD group of Caltech Library. This includes setting them up with
+sudo access, assigning them to additoinal groups and enabling login via
+SSH keys hosted on GitHub. By using the filename convension of
+<code>*-init.yaml</code> I can provide a general purpose machine
+definition while allowing for local modification via a version of the
+same file matching <code>*-local.yaml</code>.</p>
 <h2 id="trouble-shooting">Trouble shooting</h2>
 <p>I’ve run into some challenges on the M1 Mac as well as when using
 Cisco’s VPN. Here’s some helpful links to explore.</p>
