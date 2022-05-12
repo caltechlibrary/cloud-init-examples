@@ -56,6 +56,13 @@ if [ -d Sites ]; then
   multipass mount Sites $MACHINE:Sites
 fi
 
+#
+# Include staff-favorites.bash if exists
+#
+if [ -f staff-favorites.bash ]; then
+  multipass transfer staff-favorites.bash $MACHINE:.
+fi
+
 # 
 # Display state of machine
 #
