@@ -1,5 +1,5 @@
-package_update:true
-package_upgrade:true
+package_update: true
+package_upgrade: true
 package:
   - build-essential
   - python3
