@@ -1,0 +1,4 @@
+package_update: true
+package_upgrade: true
+package:
+  - build-essential

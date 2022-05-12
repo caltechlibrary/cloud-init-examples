@@ -1,22 +1,5 @@
 #!/bin/bash
-MACHINE="invenio-gui"
-## 
-## multipass set client.primary-name="${MACHINE}"
-## multipass launch --name "${MACHINE}" \
-##     --cpus 4 --mem 8G --disk 50G \
-##     --cloud-init ${MACHINE}-init.yaml
-## multipass restart "${MACHINE}"
-## multipass mount src $MACHINE:src
-## 
-
-#
-# Check if we're providing a machine name or using the existing primary name
-#
-#PRIMARY_NAME=$(multipass get client.primary-name)
-#if [ "${PRIMARY_NAME}" != "$MACHINE" ]; then
-#    echo "Changin primary name from $PRIMARY_NAME to $MACHINE"
-#    multipass set client.primary-name=$MACHINE
-#fi
+MACHINE=minimal-dev
 
 #
 # Figure out if we're launching, starting or machine is already active
@@ -35,10 +18,14 @@ if multipass list | grep $MACHINE >/dev/null; then
         exit 1
     esac
 else 
+    CLOUD_INIT="$MACHINE-local.yaml"
+    if [ ! -f "$CLOUD_INIT" ]; then
+        CLOUD_INIT="$MACHINE-init.yaml"
+    fi
     echo "Launching $MACHINE";
     multipass launch --name $MACHINE \
         --cpus 4 --mem 8G --disk 50G \
-        --cloud-init $MACHINE-init.yaml
+        --cloud-init $CLOUD_INIT
     multipass restart "${MACHINE}"
 fi
 
@@ -55,12 +42,6 @@ fi
 if [ -d Sites ]; then
   multipass mount Sites $MACHINE:Sites
 fi
-
-#
-# Transfer invenio setup instructions to VM
-#
-multipass transfer InvenioRDM-setup.md $MACHINE:.
-multipass transfer InvenioRDM-setup.html $MACHINE:Public/
 
 #
 # Make sure tcsh is installed and is set to the user shell

@@ -58,6 +58,13 @@ if [ -d Sites ]; then
 fi
 
 #
+# Make sure tcsh is installed and is set to the user shell
+#
+if [ -f staff-favorites.bash ]; then
+  multipass transfer staff-favorites.bash $MACHINE:.
+fi
+
+#
 # Display state of machine
 #
 multipass info $MACHINE

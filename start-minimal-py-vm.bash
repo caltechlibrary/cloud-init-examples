@@ -56,6 +56,14 @@ if [ -d Sites ]; then
   multipass mount Sites $MACHINE:Sites
 fi
 
+#
+# Make sure tcsh is installed and is set to the user shell
+#
+if [ -f staff-favorites.bash ]; then
+  multipass transfer staff-favorites.bash $MACHINE:.
+fi
+
+
 # 
 # Display state of machine
 #

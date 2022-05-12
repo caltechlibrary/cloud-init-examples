@@ -62,6 +62,13 @@ fi
 multipass transfer InvenioRDM-setup.md $MACHINE:.
 multipass transfer InvenioRDM-setup.html $MACHINE:Public/
 
+#
+# Make sure tcsh is installed and is set to the user shell
+#
+if [ -f staff-favorites.bash ]; then
+  multipass transfer staff-favorites.bash $MACHINE:.
+fi
+
 # 
 # Display state of machine
 #

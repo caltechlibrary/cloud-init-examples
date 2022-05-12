@@ -10,7 +10,7 @@ This repositories includes the follow example virtual machines
 setup and configurations.
 
 start-minimal-vm.bash, minimal-init.yaml
-: This is a minimal cloud init YAML just a demo of a configuration
+: This is a minimal cloud init YAML just a demo of a configuration, it includes the Debian build-essentials package
 
 start-dev-server-vm.bash, dev-server-init.yaml
 : This is a server like development environment for Golang 1.18
@@ -84,6 +84,11 @@ Stop all the VM, delete them and purge them from disk.
     multipass purge
 ```
 
+Move a file (e.g. staff-favorites.absh) to the "dev-server" VM
+
+```
+   multipass transfer staff-favorites.bash dev-server:.
+```
 
 Cloud Init Files
 ----------------
