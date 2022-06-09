@@ -134,7 +134,7 @@ Like previous example access with the `multipass` shell command.
     multipass shell
 ```
 
-A more complete exploration of running InvenioRDM is found in the [InvenioRDM-Setup](InvenioRDM-Setup.html)
+A more complete exploration of running InvenioRDM is found in the [InvenioRDM-setup](InvenioRDM-setup.html)
 
 General purpose Bash scripts
 ----------------------------
