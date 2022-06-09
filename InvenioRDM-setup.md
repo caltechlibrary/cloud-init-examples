@@ -11,9 +11,9 @@ You need the following installed to follow along with these instructions. It ass
 1. Install [multipass](https://multipass.run "Multipass website has a link tand instruction to install it based on host operating system, macOS -- Windows or Linux")
 2. Git client so you can download our cloud init examples repository assumeed by these instructions
 
-If you're already running Linux (e.g. Ubuntu 20.04 LTS), you can install multipass using [snap](https://snapscraft.io "The snaps website"). You can then use a remote desktop view that support xrdp protocol such as the [Remmina](https://remmina.org/ "Remote access screen and file sharing to your desktop website") package via `sudo apt install remmina` or `sudo snap install remmina`.
+If you're already running Linux (e.g. Ubuntu 20.04 LTS), you can install multipass using [snap](https://snapscraft.io "The snaps website"). 
 
-Optional: If you want to access the web browser inside your VM, install a remote desktop viewer. Microsoft Remote Desktop works for both Windows and macOS machines. On macOS install it from the app store.
+Optional: If you want to access the web browser inside your VM, install a remote desktop viewer. Microsoft Remote Desktop works for both Windows and macOS machines. On macOS install it from the app store. You can then use a remote desktop view that support xrdp protocol such as the [Remmina](https://remmina.org/ "Remote access screen and file sharing to your desktop website") package via `sudo apt install remmina` or `sudo snap install remmina`.
 
 
 VM Setup Recipe
