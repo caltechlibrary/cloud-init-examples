@@ -161,6 +161,8 @@ via a version of the same file matching `*-local.yaml`.
 Trouble shooting
 ----------------
 
+On a Mac, you may not be able to mount local directories until you enable Full Disk Access for multipassd in Settings -> Security & Privacy -> Privacy.
+
 I've run into some challenges on the M1 Mac as well as when using Cisco's VPN. Here's some helpful links to explore.
 
 - [Trouble shooting networking errors on macOS](https://multipass.run/docs/troubleshooting-networking-on-macos)

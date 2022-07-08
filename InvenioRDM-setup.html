@@ -21,7 +21,7 @@
       padding-top: 50px;
       padding-bottom: 50px;
       hyphens: auto;
-      overflow-wrap: break-word;
+      word-wrap: break-word;
       text-rendering: optimizeLegibility;
       font-kerning: normal;
     }
@@ -29,9 +29,6 @@
       body {
         font-size: 0.9em;
         padding: 1em;
-      }
-      h1 {
-        font-size: 1.8em;
       }
     }
     @media print {
@@ -95,7 +92,6 @@
     pre code {
       padding: 0;
       overflow: visible;
-      overflow-wrap: normal;
     }
     .sourceCode {
      background-color: transparent;
@@ -137,12 +133,6 @@
     #TOC li {
       list-style: none;
     }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
     #TOC a:not(:hover) {
       text-decoration: none;
     }
@@ -163,47 +153,22 @@
 <h1 class="title">Multipass and Cloud Init Examples</h1>
 </header>
 <h1 id="invenio-rdm-setup">Invenio RDM Setup</h1>
-<p>This is a recipe for getting a development version of InvenioRDM
-running inside a multipass VM</p>
+<p>This is a recipe for getting a development version of InvenioRDM running inside a multipass VM</p>
 <h2 id="pre-requisites">Pre-requisites</h2>
-<p>You need the following installed to follow along with these
-instructions. It assumes you’re running macOS though it should work for
-Windows too.</p>
+<p>You need the following installed to follow along with these instructions. It assumes you’re running macOS though it should work for Windows too.</p>
 <ol type="1">
-<li>Install <a href="https://multipass.run"
-title="Multipass website has a link tand instruction to install it based on host operating system, macOS -- Windows or Linux">multipass</a></li>
-<li>Git client so you can download our cloud init examples repository
-assumeed by these instructions</li>
+<li>Install <a href="https://multipass.run" title="Multipass website has a link tand instruction to install it based on host operating system, macOS -- Windows or Linux">multipass</a></li>
+<li>Git client so you can download our cloud init examples repository assumeed by these instructions</li>
 </ol>
-<p>If you’re already running Linux (e.g. Ubuntu 20.04 LTS), you can
-install multipass using <a href="https://snapscraft.io"
-title="The snaps website">snap</a>.</p>
-<p>Optional: If you want to access the web browser inside your VM,
-install a remote desktop viewer. Microsoft Remote Desktop works for both
-Windows and macOS machines. On macOS install it from the app store. You
-can then use a remote desktop view that support xrdp protocol such as
-the <a href="https://remmina.org/"
-title="Remote access screen and file sharing to your desktop website">Remmina</a>
-package via <code>sudo apt install remmina</code> or
-<code>sudo snap install remmina</code>.</p>
+<p>If you’re already running Linux (e.g. Ubuntu 20.04 LTS), you can install multipass using <a href="https://snapscraft.io" title="The snaps website">snap</a>.</p>
+<p>Optional: If you want to access the web browser inside your VM, install a remote desktop viewer. Microsoft Remote Desktop works for both Windows and macOS machines. On macOS install it from the app store. You can then use a remote desktop view that support xrdp protocol such as the <a href="https://remmina.org/" title="Remote access screen and file sharing to your desktop website">Remmina</a> package via <code>sudo apt install remmina</code> or <code>sudo snap install remmina</code>.</p>
 <h2 id="vm-setup-recipe">VM Setup Recipe</h2>
-<p>Here are a summary of the steps. The full commands can be found
-below. 1. Clone the cloud-init-examples repository 2. change to that
-directory 3. Use <code>make-invenio-gui-vm.bash</code> to create the VM
-and start it the first time 4. Add a password for the user you’re going
-to log in with, e.g. ubuntu user 5. Install <code>nvm</code>, the node
-version manager 6. Before you reboot, make sure xrdp and ubuntu-desktop
-are installed and updated 7. Reboot the VM just to make sure everything
-is working correctly 8. Use <code>multipass info invenio-gui</code> to
-find the IP address and running state of the VM before proceeding to the
-next section</p>
-<p>On your host machine where you’ve installed <a
-href="https://multipass.run" title="Multipass website">multipass</a> you
-can issuing the following commands.</p>
+<p>Here are a summary of the steps. The full commands can be found below. 1. Clone the cloud-init-examples repository 2. change to that directory 3. Use <code>start-invenio-vm.bash</code> to create the VM and start it the first time 4. Add a password for the user you’re going to log in with, e.g. ubuntu user 5. Install <code>nvm</code>, the node version manager 6. Before you reboot, make sure xrdp and ubuntu-desktop are installed and updated 7. Reboot the VM just to make sure everything is working correctly 8. Use <code>multipass info invenio</code> to find the IP address and running state of the VM before proceeding to the next section</p>
+<p>On your host machine where you’ve installed <a href="https://multipass.run" title="Multipass website">multipass</a> you can issuing the following commands.</p>
 <pre class="shell"><code>    git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
-    ./make-invenio-gui-vm.bash
-    multipass shell invenio-gui
+    ./make-invenio-vm.bash
+    multipass shell invenio
     sudo passwd ubuntu
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     sudo apt update
@@ -211,22 +176,15 @@ can issuing the following commands.</p>
     sudo apt autoremove
     sudo apt autoclean
     sudo reboot
-    multipass info invenio-gui</code></pre>
-<p>Before we go forward Ubuntu gets updates. It’s a good idea to also
-update your VM’s Ubuntu even when running a LTS.</p>
-<p>NOTE: When you reboot the VM you’ll be dumpted out at your host
-system’s shell. Wait a minute or then use Use the last command
-<code>multipass info invenio-gui</code> to get the reboot status and to
-show the IP addresses we need to connect to the VM.</p>
+    multipass info invenio</code></pre>
+<p>Before we go forward Ubuntu gets updates. It’s a good idea to also update your VM’s Ubuntu even when running a LTS.</p>
+<p>NOTE: When you reboot the VM you’ll be dumpted out at your host system’s shell. Wait a minute or then use Use the last command <code>multipass info invenio-gui</code> to get the reboot status and to show the IP addresses we need to connect to the VM.</p>
 <h2 id="inveniordm-configuration">InvenioRDM Configuration</h2>
 <p>Now we can connect to our vm in our terminal window</p>
 <pre class="shell"><code>    multipass shell</code></pre>
-<p>If you’re going to do development InvenioRDM needs NodeJS 14.0.0 to
-build properly. We need to install NodeJS using <code>nvm</code> to meet
-that requirement.</p>
+<p>If you’re going to do development InvenioRDM needs NodeJS 14.0.0 to build properly. We need to install NodeJS using <code>nvm</code> to meet that requirement.</p>
 <pre class="shell"><code>    nvm install 14.0.0</code></pre>
-<p>Now we can follow the instructions based on
-https://inveniordm.docs.cern.ch/install/build-setup-run/.</p>
+<p>Now we can follow the instructions based on https://inveniordm.docs.cern.ch/install/build-setup-run/.</p>
 <pre><code>    invenio-cli init rdm -c v9.0</code></pre>
 <p>I answered the questions as follows</p>
 <ul>
@@ -244,9 +202,7 @@ https://inveniordm.docs.cern.ch/install/build-setup-run/.</p>
 <pre class="shell"><code>    cd demo
     invenio-cli install
     invenio-cli services setup</code></pre>
-<p>Now edit the ‘invenio.cfg’ file to add your VM IP address. In this
-example mine was 192.168.64.8; please change this to the IP for your
-VM.</p>
+<p>Now edit the ‘invenio.cfg’ file to add your VM IP address. In this example mine was 192.168.64.8; please change this to the IP for your VM.</p>
 <pre><code>APP_ALLOWED_HOSTS = [&#39;0.0.0.0&#39;, &#39;localhost&#39;, &#39;127.0.0.1&#39;, &#39;192.168.64.8&#39;]
 
 SITE_UI_URL = &quot;https://192.168.64.8&quot;
@@ -254,11 +210,8 @@ SITE_UI_URL = &quot;https://192.168.64.8&quot;
 SITE_API_URL = &quot;https://192.168.64.8/api&quot;</code></pre>
 <p>Now we can run the application</p>
 <pre class="shell"><code>    invenio-cli run -h 192.168.64.8</code></pre>
-<p>You can now open firefox and go to your VM IP to see your Invenio
-instance. Other browsers will work, but have more annoying warnings
-about the self-signed SSL certificate that is used.</p>
-<p>Sometimes you need to tear down and start over an development
-InvenioRDM instance.</p>
+<p>You can now open firefox and go to your VM IP to see your Invenio instance. Other browsers will work, but have more annoying warnings about the self-signed SSL certificate that is used.</p>
+<p>Sometimes you need to tear down and start over an development InvenioRDM instance.</p>
 <pre class="shell"><code>    invenio-cli services stop
     invenio-cli services destroy
     invenio-cli destroy</code></pre>

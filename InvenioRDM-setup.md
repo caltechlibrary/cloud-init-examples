@@ -22,20 +22,20 @@ VM Setup Recipe
 Here are a summary of the steps. The full commands can be found below.
 1. Clone the cloud-init-examples repository
 2. change to that directory
-3. Use `make-invenio-gui-vm.bash` to create the VM and start it the first time
+3. Use `start-invenio-vm.bash` to create the VM and start it the first time
 4. Add a password for the user you're going to log in with, e.g. ubuntu user
 5. Install `nvm`, the node version manager
 6. Before you reboot, make sure xrdp and ubuntu-desktop are installed and updated
 7. Reboot the VM just to make sure everything is working correctly
-8. Use `multipass info invenio-gui` to find the IP address and running state of the VM before proceeding to the next section
+8. Use `multipass info invenio` to find the IP address and running state of the VM before proceeding to the next section
 
 On your host machine where you've installed [multipass](https://multipass.run "Multipass website") you can issuing the following commands.
 
 ```shell
     git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
-    ./make-invenio-gui-vm.bash
-    multipass shell invenio-gui
+    ./make-invenio-vm.bash
+    multipass shell invenio
     sudo passwd ubuntu
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     sudo apt update
@@ -43,7 +43,7 @@ On your host machine where you've installed [multipass](https://multipass.run "M
     sudo apt autoremove
     sudo apt autoclean
     sudo reboot
-    multipass info invenio-gui
+    multipass info invenio
 ```
 
 Before we go forward Ubuntu gets updates. It's a good idea to also update your VM's Ubuntu even when running a LTS.

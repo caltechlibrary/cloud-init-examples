@@ -1,5 +1,5 @@
 #!/bin/bash
-MACHINE="invenio-gui"
+MACHINE="invenio"
 ## 
 ## multipass set client.primary-name="${MACHINE}"
 ## multipass launch --name "${MACHINE}" \
