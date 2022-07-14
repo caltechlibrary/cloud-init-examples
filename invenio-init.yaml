@@ -1,7 +1,7 @@
 #cloud-config
 package_update: true
 package_upgrade: true
-fqdn: invenio-gui.local
+fqdn: invenio.local
 packages:
   - build-essential
   - git
@@ -10,13 +10,8 @@ packages:
   - python3-dev
   - python3-pip
   - rsync
-  - apache2
-  - apache2-utils
-  - ssl-cert
-  - libapache2-mod-wsgi 
+  - libcairo2-dev
   - imagemagick
-  - ubuntu-desktop
-  - xrdp
 groups:
   - docker
   - staff
