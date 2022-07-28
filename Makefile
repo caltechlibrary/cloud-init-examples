@@ -14,11 +14,13 @@ MARKDOWN_PAGES =$(shell ls -1 *.md | sed -E 's/\.md//g')
 HTML_PAGES = $(shell ls -1 *.md | sed -E 's/\.md/.html/g')
 
 
-build: $(HTML_PAGES) CITATION.cff
+build: $(HTML_PAGES) CITATION.cff index.html
 
 CITATION.cff: codemeta.json
 	codemeta2cff
 
+index.html: README.md $(MARKDOWN_PAGES)
+	mv README.html index.html
 
 $(HTML_PAGES): $(MARKDOWN_PAGES)
 
