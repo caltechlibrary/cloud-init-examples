@@ -56,7 +56,7 @@ InvenioRDM Configuration
 Now we can connect to our vm in our terminal window 
 
 ```shell
-    multipass shell
+    multipass shell invenio
 ```
 
 If you're going to do development InvenioRDM needs NodeJS 14.0.0 to build properly.  We need to install NodeJS
@@ -93,7 +93,9 @@ In the terminal run the following commands
     invenio-cli services setup
 ```
 
-Now edit the 'invenio.cfg' file to add your VM IP address. In this example mine was 192.168.64.8; please change this to the IP for your VM.
+Now edit the 'invenio.cfg' file to add your VM IP address. In this example mine was 192.168.64.8; please change this to the IP for your VM. You can
+get the IP address of the VM from running `multipass info invenio` on
+your host machine.
 
 ```
 APP_ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '192.168.64.8']

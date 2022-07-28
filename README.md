@@ -6,26 +6,26 @@ This repository includes some example of cloud-init YAML files for use with [mul
 Examples
 --------
 
-This repositories includes the follow example virtual machines 
-setup and configurations.
+Included in this repository is a set of Bash script for starting, stoping and stats on a multipass VMs. These scripts are used in conjunction with a set of cloud init YAML files that describe a machine. The files are named in the form of MACHINE_NAME dash "-init.yaml".  You can create a copy of the `*-init.yaml` files named `*-local.yaml` and that will be used instead for a given machine name. In addition the startup Bash script, `start-vm.bash` accepts a machine "size" based on the the suffix part of the AWS EC2 machine names (e.g. t4g.nano suffix is "nano").  You can include this the first time you startup a machine to create a similarly size VM.
 
-start-minimal-vm.bash, minimal-init.yaml
-: This is a minimal cloud init YAML just a demo of a configuration, it includes the Debian build-essentials package
+`start-vm.bash minimal-dev nano`
+: This is a minimal cloud init YAML just a demo of a configuration, it includes the Debian build-essentials package. It is roughly the spec of an AWS EC2 T4g.nano
 
-start-dev-server-vm.bash, dev-server-init.yaml
-: This is a server like development environment for Golang 1.18
+`start-vm.bash minimal-py small`
+: This starts a "small" minimal Python 3 development machine. It is roughly the space of an AWS EC2 T4g.small
 
-start-invenio-server-vm.bash, invenio-server-init.yaml
-: This is a server like development environment for Invenio-RDM
+`start-vm.bash invenio xlarge`
+: This will create a machine configured to run Invenio RDM about the size of an EC2 T4g.xlarge instance
+
+`start-vm.bash dev-server medium`
+: This is a server like development environment for Golang 1.18. This example creates a T4g.medium sized instance.
 
 The next set provide the ability to run as a full GUI environment on macOS or Windows using the Microsoft Remote Desktop viewer or Remmina on Linux. The are based on the previous terminal oriented VMs but add the "ubuntu-desktop" and "xrdp" package to handle the remote displays.  For you to use the GUI versions your VM accounts need to have a password associated with them. You can use the `multipass shell` command to get a shell and then use `sudo passwd USERNAME` to set the password for "USERNAME" (e.g. ubuntu, rsdoiel).
 
-If you would like to have a Ubuntu Desktop available for use in your multipass VM Ihave provided several examples.
-start-dev-gui-vm.bash, dev-gui-init.yaml
-: A development GUI environment for Golang 1.18, uses 4 cores and 8G of RAM
+`start-vm.bash dev-gui large`
+: This will start a development virtual machine with the Ubuntu Desktop installed using the size similar to an AWS EC2 T4g.large instance.
 
-start-invenio-gui-vm.bash, invenio-gui-init.yaml
-: A development GUI environment for Invenio-RDM, uses 4 cores and 8G of RAM
+The sizes recognized by `start-vm.bash` are nano, micro, tiny, small, medium, large, xlarge, 2xlarge. See https://aws.amazon.com/ec2/instance-types/t4 for the descriptions used to model these sizes. Look in the T4g section of the table
 
 
 Multipass
@@ -42,9 +42,7 @@ Get a list of VMs available
     multipass list
 ```
 
-Set a VM as primary (e.g. a machine named "dev-server") so you don't
-have to provide a name with each command. If you want to access 
-a non-primary VM then give it a name and pass the name in the command.
+Set a VM as primary (e.g. a machine named "dev-server") so you don't have to provide a name with each command. If you want to access a non-primary VM then give it a name and pass the name in the command.
 
 ```shell
     multipass set client.primary-name=dev-server
@@ -98,7 +96,7 @@ Cloud Init Files
 Minimal Py
 ----------
 
-The `start-minimal-py-vm.bash` scripts creates a minimal python development box described in minimal-py-init.yaml. It doens't create users or install more than python3 and pip.
+The `start-vm.bash minimal-py small` scripts creates a minimal python development box described in minimal-py-init.yaml. It doens't create users or install more than python3 and pip.
 
 The Dev VM
 ----------
@@ -106,7 +104,7 @@ The Dev VM
 This will create a VM named "dev-server". It includes a more complete server development environment including support for Go version 1.18.x.  It includes examples of installing packages via apt and snaps.
 
 ```shell
-    bash start-dev-server-vm.bash
+    start-vm.bash dev-server small
 ```
 
 Access VM as Ubuntu user.
@@ -125,7 +123,7 @@ The InvenioRDM VM
 The InvenioRDM VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick and installs nodejs 14.0.0 so the virtual machine is ready for use in a developer setting.
 
 ```shell
-    bash start-invenio-server-vm.bash
+    start-vm.bash invenio xlarge
 ```
 
 Like previous example access with the `multipass` shell command.
@@ -141,21 +139,14 @@ General purpose Bash scripts
 
 I have provided three Bash scripts for starting/launching, getting info and stopping your multipass VM.
 
-1. start-vm.bash - starts an existing or launches a new virtual machine based on a related cloud init YAML file
+1. start-vm.bash - starts an existing or launches a new virtual machine based on a related cloud init YAML file. If you're creating the machine pass a zie of nano, micro, small, medium, large, xlarge, or 2xlarge to create a machine with a similar profile to the AWS EC2 T4g sizes, see https://aws.amazon.com/ec2/instance-types/t4/
 2. stats-vm.bash - will return information about the machine (i.e. it runs `multipass info $MACHINE`)
 3. stop-vm-.bash - will stop the machine
 
-If you've devined a primary name for the machine the Bash scripts can be used without any additoinal parameters. If
+If you've defined a primary name for the machine the Bash scripts can be used without any additoinal parameters. If
 you provide a machine name as a parameter then the scripts will work with that machine name.
 
-For creating new machines (aka multipass launch) the start-vm.bash script looks for a cloud init YAML file that
-defines the new machine. By default it first looks for the name `$MACHINE-local.yaml` and if that is not available
-it looks for `$MACHINE-init.yaml`.   The `*-init.yaml` files provided in this repository are a good starting point but
-the cloud init support in multipass goes much further.  The YAML file called `dev-server-local.yaml` is provided as an
-example of including full login setup for the developers in the DLD group of Caltech Library. This includes setting them
-up with sudo access, assigning them to additoinal groups and enabling login via SSH keys hosted on GitHub.  By using the
-filename convension of `*-init.yaml` I can provide a general purpose machine definition while allowing for local modification
-via a version of the same file matching `*-local.yaml`.
+For creating new machines (aka multipass launch) the start-vm.bash script looks for a cloud init YAML file that defines the new machine. By default it first looks for the name `$MACHINE-local.yaml` and if that is not available it looks for `$MACHINE-init.yaml`.   The `*-init.yaml` files provided in this repository are a good starting point but the cloud init support in multipass goes much further.  The YAML file called `dev-server-local.yaml` is provided as an example of including full login setup for the developers in the DLD group of Caltech Library. This includes setting them up with sudo access, assigning them to additoinal groups and enabling login via SSH keys hosted on GitHub.  By using the filename convension of `*-init.yaml` I can provide a general purpose machine definition while allowing for local modification via a version of the same file matching `*-local.yaml`.
 
 
 Trouble shooting
