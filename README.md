@@ -14,7 +14,7 @@ Included in this repository is a set of Bash script for starting, stoping and st
 `start-vm.bash minimal-py small`
 : This starts a "small" minimal Python 3 development machine. It is roughly the space of an AWS EC2 T4g.small
 
-`start-vm.bash invenio xlarge`
+`start-vm.bash invenio 2xlarge`
 : This will create a machine configured to run Invenio RDM about the size of an EC2 T4g.xlarge instance
 
 `start-vm.bash dev-server medium`
@@ -123,7 +123,7 @@ The InvenioRDM VM
 The InvenioRDM VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick and installs nodejs 14.0.0 so the virtual machine is ready for use in a developer setting.
 
 ```shell
-    start-vm.bash invenio xlarge
+    start-vm.bash invenio 2xlarge
 ```
 
 Like previous example access with the `multipass` shell command.
