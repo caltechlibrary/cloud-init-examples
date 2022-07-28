@@ -12,6 +12,8 @@ packages:
   - rsync
   - libcairo2-dev
   - imagemagick
+  - libxml2-dev
+  - libxmlsec1-dev
 groups:
   - docker
   - staff

@@ -34,7 +34,7 @@ On your host machine where you've installed [multipass](https://multipass.run "M
 ```shell
     git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
-    ./make-invenio-vm.bash
+    ./start-invenio-vm.bash
     multipass shell invenio
     sudo passwd ubuntu
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
@@ -48,7 +48,7 @@ On your host machine where you've installed [multipass](https://multipass.run "M
 
 Before we go forward Ubuntu gets updates. It's a good idea to also update your VM's Ubuntu even when running a LTS.
 
-NOTE: When you reboot the VM you'll be dumpted out at your host system's shell. Wait a minute or then use Use the last command `multipass info invenio-gui` to get the reboot status and to show the IP addresses we need to connect to the VM.
+NOTE: When you reboot the VM you'll be dumpted out at your host system's shell. Wait a minute or then use Use the last command `multipass info invenio` to get the reboot status and to show the IP addresses we need to connect to the VM.
 
 InvenioRDM Configuration
 -------------------------------
@@ -70,7 +70,7 @@ using `nvm` to meet that requirement.
 Now we can follow the instructions based on https://inveniordm.docs.cern.ch/install/build-setup-run/.
 
 ```
-    invenio-cli init rdm -c v9.0
+    invenio-cli init rdm -c v9.1
 ```
 
 I answered the questions as follows
