@@ -11,6 +11,8 @@ packages:
   - rsync
   - nginx 
   - imagemagick
+  - libxml2-dev
+  - libxmlsec1-dev
 groups:
   - docker
   - staff
