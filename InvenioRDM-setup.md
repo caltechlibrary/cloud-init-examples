@@ -34,7 +34,7 @@ On your host machine where you've installed [multipass](https://multipass.run "M
 ```shell
     git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
-    ./start-invenio-vm.bash
+    ./start-vm.bash invenio xlarge
     multipass shell invenio
     sudo passwd ubuntu
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
