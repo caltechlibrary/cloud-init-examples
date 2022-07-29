@@ -158,3 +158,11 @@ I've run into some challenges on the M1 Mac as well as when using Cisco's VPN. H
 
 - [Trouble shooting networking errors on macOS](https://multipass.run/docs/troubleshooting-networking-on-macos)
 
+Where to go from here
+---------------------
+
+We've create a few recipes you may find useful.
+
+- [InvenioRDM Setup](InvenioRDM-setup.html)
+- [Shibboleth IdP 4](Shib-IdP-4.html)
+
