@@ -8,6 +8,6 @@ authors:
 abstract: This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.
 repository-code: "https://github.com/caltechlibrary/cloud-init-examples"
 type: software
-version: 0.0.4
+version: 0.0.5
 license-url: "https://spdx.org/licenses/BSD-3-Clause"
-date-released: 2022-07-28
+date-released: 2022-07-29
