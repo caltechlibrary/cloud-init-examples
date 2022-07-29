@@ -30,7 +30,7 @@ the prefer for limited resources and have chosen a "small" VM.
 You can access the VM as with
 
 ```shell
-    ./multipass shell shib-idp
+    multipass shell shib-idp
 ```
 
 Additional prep
@@ -54,7 +54,7 @@ lines
 
 ```
 # Setup local idp.example.edu name
-192.168.64.154 idp.example.edu
+192.168.64.154 idp.example.edu idp
 ```
 
 On your host machine you can run `multipass info shib-ipd` to get
@@ -73,8 +73,6 @@ On the VM I create that script returned `/usr/lib/jvm/java-11-openjdk-arm64`. I 
 JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
 ```
 
-
-
 At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.
@@ -92,14 +90,15 @@ things I still need to do by hand.
 4. Deploy the war file so it is available to Jetty (the servlet engine)
 5. Proceed to configure shibboleth idp service
 
+(from your multipass shell)
+
 ```
-    multipass shell shib-idp
-    
+    cd $HOME
     curl -L -O https://shibboleth.net/downloads/identity-provider/latest4/shibboleth-identity-provider-4.2.1.zip
     
     unzip shibboleth-identity-provider-4.2.1.zip
     cd shibboleth-identity-provider-4.2.1
-    sudo ./bin/bash install.sh \
+    sudo ./bin/install.sh \
        -Didp.host.name=$(hostname -f) \
        -Didp.keysize=3072
 ```
@@ -159,6 +158,7 @@ Now we need to update the ownership of some of the directories so
 
 ```shell
    cd /opt/shibboleth-idp && sudo chown -R jetty logs/ metadata/ credentials/ conf/ war/
+   cd $HOME
 ```
 
 Getting Jetty to know about IdP
@@ -196,6 +196,7 @@ to know when things are finally working.
     sudo su
     mkdir -p /var/www/html/idp.example.edu
     echo 'It Works!' > /var/www/html/idp.example.edu/index.html
+    chown -R www-data: /var/www/html/idp.example.edu
     exit
 ```
 
@@ -261,6 +262,16 @@ that to `/etc/apache2/site-available` and then use the Apache 2
 
 You should now have Apache 2 configure to talk to our IdP.
 
+You can check your Apache setup with
+
+```
+lynx https://localhost
+lynx https://idp.example.edu
+```
+
+You should see the "It Works!" page for both URLs after accepting
+the certificate (that is because the configuration is using the 
+"snakeoil" certs).
 
 Checking our configuration
 --------------------------
