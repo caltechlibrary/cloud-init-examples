@@ -1,0 +1,19 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+fqdn: shib-idp-test.local
+packages:
+  - build-essential
+  - git
+  - autoconf
+  - automake
+  - curl 
+  - unzip
+  - tmux
+  - tree
+  - htop
+  - apache2
+  - default-jdk
+  - jetty9
+
+
