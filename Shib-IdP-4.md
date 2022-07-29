@@ -238,7 +238,7 @@ Download the example from https://caltechlibrary.github.io/cloud-init-examples/e
 
 ```
     cd $HOME
-    curl -L -O https://caltechlibrary.github.io/cloud-init-examples/etc/apache2/sites-available/idp.example.org.conf
+    curl -L -O https://caltechlibrary.github.io/cloud-init-examples/etc/apache2/sites-available/idp.example.edu.conf
 ```
 
 Edit this file in your favorite editor. Make sure apply your
