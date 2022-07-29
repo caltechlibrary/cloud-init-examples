@@ -1,7 +1,7 @@
 #cloud-config
 package_update: true
 package_upgrade: true
-fqdn: shib-idp-test.local
+fqdn: shib-idp.local
 packages:
   - build-essential
   - git
@@ -12,8 +12,14 @@ packages:
   - tmux
   - tree
   - htop
+  - ntp
+  - openssl
+  - ca-certificates
   - apache2
   - default-jdk
+  - libservlet3.1-java
+  - liblogback-java
   - jetty9
+  - gnupg
 
 
