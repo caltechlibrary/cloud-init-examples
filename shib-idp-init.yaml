@@ -12,14 +12,11 @@ packages:
   - tmux
   - tree
   - htop
-  - ntp
-  - openssl
-  - ca-certificates
   - apache2
+  - certbot
   - default-jdk
   - libservlet3.1-java
   - liblogback-java
   - jetty9
-  - gnupg
 
 
