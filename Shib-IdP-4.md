@@ -234,12 +234,11 @@ You can find my example `idp.example.edu.conf` file in the https://github.com/ca
 "snake oil" SSL certs for the machine. You'll probably want to 
 improve on that.
 
-You can get a copy locally using cURL.
+Download the example from https://caltechlibrary.github.io/cloud-init-examples/etc/apache2/sites-available/idp.example.org.conf
 
-```shell
+```
     cd $HOME
-    curl -L -o idp.example.edu.conf \
-       https://registry.idem.garr.it/idem-conf/shibboleth/IDP4/apache2/idp.example.org.conf
+    curl -L -O https://caltechlibrary.github.io/cloud-init-examples/etc/apache2/sites-available/idp.example.org.conf
 ```
 
 Edit this file in your favorite editor. Make sure apply your
