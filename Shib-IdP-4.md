@@ -366,5 +366,5 @@ FIXME: Need to document options and setting things up here.
 Wrapping things up
 ------------------
 
-See [Shibboleth-IdP-References](Shibboleth-IdP-References.html)
+See [Shibboleth IdP References](Shib-IdP-References.html)
 
