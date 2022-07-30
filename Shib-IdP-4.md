@@ -77,6 +77,21 @@ At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.
 
+Finnally we're going to create a startup definition for Jetty 9.
+
+```shell
+    sudo bash -c 'cat > /var/lib/jetty9/webapps/idp.xml <<EOF
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+  <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
+  <Set name="contextPath">/idp</Set>
+  <Set name="extractWAR">false</Set>
+  <Set name="copyWebDir">false</Set>
+  <Set name="copyWebInf">true</Set>
+  <Set name="persistTempDirectory">false</Set>
+</Configure>
+EOF'
+```
+
 
 Installing the Shibboleth IdP 4 software
 ----------------------------------------
@@ -153,37 +168,74 @@ Total time: 36 seconds
 When the installer has completed it will have created a "war" file.
 In my case it installed it in `/opt/shibboleth-idp/war/idp.war`.
 
-Now we need to update the ownership of some of the directories so
-`jetty` user can manage them.
-
-```shell
-   cd /opt/shibboleth-idp && sudo chown -R jetty logs/ metadata/ credentials/ conf/ war/
-   cd $HOME
-```
-
 Getting Jetty to know about IdP
 ---------------------------------
 
-We need to tell Jetty9 where to find the Shibboleth IdP 4 service. We 
-do this by creating a `idp.xml` file in `/usr/share/jetty9/webapps/`.
-The command I used to do this is `sudo vi /usr/share/jetty9/webapps/idp.xml` and adding the following content before saving the file.
+The simplest way to install a `.war` file in Jetty is to copy
+it to the Jetty `webapps` directory.  It needs to be owned by
+the Jetty user. On Ubuntu 20.04 LTS the default location for 
+Jetty (JETTY_HOME) resolves to `/var/lib/jetty9` so we want
+to copy our `idp.war` file to `/var/lib/jetty9/webapps/`
 
-```xml
+```shell
+sudo su
+cp /opt/shibboleth-idp/war/idp.war /var/lib/jetty9/webapps/
+chown jetty:adm /var/lib/jetty9/webapps/idp.war
+exit
+sudo systemctl restart jetty9
+```
+
+We should now try to make sure Jetty is running our service.
+
+```shell
+lynx http://localhost:8080/idp/status
+```
+
+Should return a status page.
+
+A better way to deploy our `idp.war`. A better way is deploy
+a WAR file to Jetty is via a context XML file. To do remove `/var/lib/jetty9/webapps/idp.war` then we can setup using a context file.
+
+
+For Jetty a context file lets us leave the WAR file in our Shibboleth-ipd directory and just point at it. The context file must
+match the name as the WAR file, i.e. `idp.xml` for a war file called `idp.war`. Use the command below to create our `idp.xml` in the 
+`/var/lib/jetty9/webapps` directory.
+
+```shell
+    sudo bash -c 'cat <<EOF > /var/lib/jetty9/webapps/idp.xml 
 <Configure class="org.eclipse.jetty.webapp.WebAppContext">
-  <Set name="war"><SystemProperty name="idp.home"/>/opt/shibboleth-idp/war/idp.war</Set>
   <Set name="contextPath">/idp</Set>
+  <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
   <Set name="extractWAR">false</Set>
   <Set name="copyWebDir">false</Set>
   <Set name="copyWebInf">true</Set>
   <Set name="persistTempDirectory">false</Set>
 </Configure>
+EOF'
 ```
 
-We should not restart the Jeyy9 service.
+The context file along with the war file and several directories in
+our `/opt/shibboleth-idp` need to be owned by the jetty user.
 
 ```shell
-    sudo systemctl restart jetty9
+    sudo su
+    cd /opt/shibboleth-idp
+    chown -R jetty:adm logs metadata credentials conf war
+    chown jetty:adm /var/lib/jetty9/webapp/idp.xml
+    exit
+    cd $HOME
 ```
+
+Now we can restart jetty and test our setup.
+
+```shell
+   sudo systemctl restart jetty9
+   lynx http://localhost:8080/idp/status
+```
+
+If we see the Shibboleth IdP 4 status page we're ready to proceed to
+setting up Apache 2 as a reverse proxy for our IdP.
+
 
 Configuring Apache 2
 --------------------
@@ -273,37 +325,43 @@ You should see the "It Works!" page for both URLs after accepting
 the certificate (that is because the configuration is using the 
 "snakeoil" certs).
 
-Checking our configuration
---------------------------
+Now let's see if our reverse proxy setup works.
 
-The script `./bin/status.sh` can be used to check if the install was
-successful. On my intial try it was not.
+```
+lynx https://idp.example.edu/idp/status
+```
+
+If we see the Shibboeth IdP status page we're good to proceed.
+
+Configuring our IdP
+-------------------
+
+Unfornately we're not done quite yet. We need to actually beable to use our IdP.  This involves two parts, first we want to configure our host environment to see our `idp.example.edu` host provided by the multipass instance.  The second is we need to configure the idp itself.
+
+If you are running macOS, Linux or another Unix there is a file called `/etc/hosts`. This file can contain locally defined ip address and machine names.  You need to know the IP address of your multipass instance.
 
 ```shell
-    cd /opt/shibboleth-idp/
-    ./bin/status.sh
+    multipass info shib-idp
 ```
 
-This reported 
+In my case it reported "192.168.64.155" (your will be different)
+
+I can make my local machine treat that IP address as `idp.example.edu` by adding a line to the `/etc/hosts` file. In my case I added two
+lines.
 
 ```
-(http://localhost/idp/status) http://localhost/idp/status
+# This is a multipass instance of my Shibboleth IdP
+192.168.64.155 idp.example.edu idp
 ```
 
-We can use `lynx` to see the status at the URLs provided.
+If the next time you run the multipass shib-idp and it is assigned a different IP number remember to update your hosts' `/etc/hosts` to reflect the new IP number associated with `idp.example.edu`.
 
-```
-    lynx http://localhost/idp/status
-```
+NOTE: Chrome just will net let you access the snake oil signed SSL certs used by our VM's Apache. You can create valid certs or use a different web browser, I use Firefox and am able to click through the various warnings.
 
-So it looks like things are setup and our Shibboleth IdP is now running.
 
-If you get errors. The Shibboleth documentation is less than helpful.
-I found this tutorial helpful, https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Debian-Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v4.x%20on%20Debian-Ubuntu%20Linux%20with%20Apache2%20%2B%20Jetty9.md as well as this page https://cloudinfrastructureservices.co.uk/install-shibboleth-sso-on-ubuntu-20-04/
+Now for the second step, populating our IdP.
 
-Note unlike the GitHub example I didn't compile anything. I used the stock Ubuntu 20.04 LTS apache2, Jetty9, default-jdk except the downloaded Shibboleth-IdP-4 which I compiled using its installer script. All my challenges was getting the JAVA / Jetty environment correct. That took me a while to sort out, hopefully you get up and running quickly.
-
-Unfornately we're not done quite yet.
+FIXME: Need to document options and setting things up here.
 
 Wrapping things up
 ------------------
