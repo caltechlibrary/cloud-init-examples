@@ -366,4 +366,5 @@ FIXME: Need to document options and setting things up here.
 Wrapping things up
 ------------------
 
-On my host system I should now be able to use the multipass VM as my IdP. To do that
+See [Shibboleth-IdP-References](Shibboleth-IdP-References.html)
+
