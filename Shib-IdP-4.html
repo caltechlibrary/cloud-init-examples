@@ -168,16 +168,16 @@ identity provider). The recipe use case is setting up an IdP for testing
 web applications that integrate Shibboleth SP (SP stands for “Service
 Provider”, e.g. the application you’re going to write that uses single
 sign-on via Shibboleth) . It uses Shibboleth IdP version 4, OpenJDK 11,
-Tomcat and Apache2.</p>
-<p>The Official Shibboleth IdP 4 documentation is at
-https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview.</p>
+Jetty9 and Apache2.</p>
+<p>The Official Shibboleth IdP 4 documentation is at <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview">https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview</a>.</p>
 <p>This document summarizes the installation process for running under
 Ubuntu 20.04 LTS using standard Ubuntu packages (e.g. Apache2, Jetty9,
 OpenJDK 11) where appropriate. This hopely will ease running an IdP
 service under cloud-init and Multipass.</p>
 <h2 id="requirements">Requirements</h2>
 <ul>
-<li>Tomcat 9 (e.g. Ubuntu 20.04 LTS, tomcat9)</li>
+<li>Jetty 9 (e.g. Ubuntu 20.04 LTS, tomcat9)</li>
 <li>OpenJDK 11 (e.g. Ubuntu 20.04 LTS, default-jdk)</li>
 <li>The latest identity provider from linked on
 https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview</li>
@@ -211,6 +211,8 @@ find out the JAVA_HOME value needed with</p>
 <code>/usr/lib/jvm/java-11-openjdk-arm64</code>. I added the following
 line after the PATH setting in <code>/etc/environment</code>.</p>
 <pre><code>JAVA_HOME=&quot;/usr/lib/jvm/java-11-openjdk-arm64&quot;</code></pre>
+<p>You should logout and back in to pickup the JAVA_HOME environment
+variable.</p>
 <p>At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.</p>
@@ -297,24 +299,9 @@ In my case it installed it in
 <code>/opt/shibboleth-idp/war/idp.war</code>.</p>
 <h2 id="getting-jetty-to-know-about-idp">Getting Jetty to know about
 IdP</h2>
-<p>The simplest way to install a <code>.war</code> file in Jetty is to
-copy it to the Jetty <code>webapps</code> directory. It needs to be
-owned by the Jetty user. On Ubuntu 20.04 LTS the default location for
-Jetty (JETTY_HOME) resolves to <code>/var/lib/jetty9</code> so we want
-to copy our <code>idp.war</code> file to
-<code>/var/lib/jetty9/webapps/</code></p>
-<pre class="shell"><code>sudo su
-cp /opt/shibboleth-idp/war/idp.war /var/lib/jetty9/webapps/
-chown jetty:adm /var/lib/jetty9/webapps/idp.war
-exit
-sudo systemctl restart jetty9</code></pre>
-<p>We should now try to make sure Jetty is running our service.</p>
-<pre class="shell"><code>lynx http://localhost:8080/idp/status</code></pre>
-<p>Should return a status page.</p>
-<p>A better way to deploy our <code>idp.war</code>. A better way is
-deploy a WAR file to Jetty is via a context XML file. To do remove
-<code>/var/lib/jetty9/webapps/idp.war</code> then we can setup using a
-context file.</p>
+<p>Since we’ve install Shibboleth IdP 4 <code>/opt/shibboleth-idp</code>
+we need to provide a “context XML file” to tell Jetty where to find
+it.</p>
 <p>For Jetty a context file lets us leave the WAR file in our
 Shibboleth-ipd directory and just point at it. The context file must
 match the name as the WAR file, i.e. <code>idp.xml</code> for a war file
@@ -337,11 +324,12 @@ user.</p>
 <pre class="shell"><code>    sudo su
     cd /opt/shibboleth-idp
     chown -R jetty:adm logs metadata credentials conf war
-    chown jetty:adm /var/lib/jetty9/webapp/idp.xml
+    chown jetty:adm /var/lib/jetty9/webapps/idp.xml
     exit
     cd $HOME</code></pre>
 <p>Now we can restart jetty and test our setup.</p>
 <pre class="shell"><code>   sudo systemctl restart jetty9
+   # NOTE: You need to way a while, Jetty is slow to restart!!
    lynx http://localhost:8080/idp/status</code></pre>
 <p>If we see the Shibboleth IdP 4 status page we’re ready to proceed to
 setting up Apache 2 as a reverse proxy for our IdP.</p>
@@ -398,6 +386,7 @@ to <code>/etc/apache2/site-available</code> and then use the Apache 2
     vi idp.example.edu.conf
     sudo cp idp.example.edu.conf /etc/apache2/sites-available/
     sudo a2ensite idp.example.edu.conf
+    sudo apache2ctl -t
     sudo systemctl restart apache2</code></pre>
 <p>You should now have Apache 2 configure to talk to our IdP.</p>
 <p>You can check your Apache setup with</p>
@@ -430,10 +419,17 @@ multipass instance.</p>
 different IP number remember to update your hosts’
 <code>/etc/hosts</code> to reflect the new IP number associated with
 <code>idp.example.edu</code>.</p>
-<p>NOTE: Chrome just will net let you access the snake oil signed SSL
-certs used by our VM’s Apache. You can create valid certs or use a
-different web browser, I use Firefox and am able to click through the
-various warnings.</p>
+<p>NOTE: Chrome just will net let you access self signed or snake oil
+SSL certs used by our VM’s Apache. You can get Chrome to accept
+localhost inscure certificate with
+<code>chrome://flags/#allow-insecure-localhost</code> and set the
+setting to “enable” then reload Chrome but this doesn’t work for the VM
+as it is a separate IP address we’re using.</p>
+<p>You can create valid certs (buy or figure out how to use let’s
+encrypt) or use a different web browser. I use Firefox and am able to
+click through the various warnings.</p>
+<h3 id="configuring-and-populating-out-idp-service">Configuring and
+populating out IdP service</h3>
 <p>Now for the second step, populating our IdP.</p>
 <p>FIXME: Need to document options and setting things up here.</p>
 <h2 id="wrapping-things-up">Wrapping things up</h2>

@@ -136,8 +136,11 @@ fi
 #
 # Include staff-favorites.bash if exists
 #
-if [ -f staff-favorites.bash ]; then
-  multipass transfer staff-favorites.bash $MACHINE:.
+if [ -f scripts/staff-favorites.bash ]; then
+  multipass transfer scripts/staff-favorites.bash $MACHINE:.
+fi
+if [ -f scripts/setup-self-signed-SSL-certs.bash ]; then
+  multipass transfer scripts/setup-self-signed-SSL-certs.bash $MACHINE:.
 fi
 
 # 

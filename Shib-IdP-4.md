@@ -2,10 +2,10 @@ Shibboleth IdP 4
 ================
 
 This is a recipe for setting a local Shibboleth IdP 4 (IdP stands for identity provider). The recipe use case is setting up an IdP for testing web applications that integrate Shibboleth SP (SP stands for "Service Provider", e.g. the application you're going to write that uses single sign-on via Shibboleth) . It uses
-Shibboleth IdP version 4, OpenJDK 11, Tomcat and Apache2. 
+Shibboleth IdP version 4, OpenJDK 11, Jetty9 and Apache2. 
 
 The Official Shibboleth IdP 4 documentation is at
-https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview.
+[https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview](https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview).
 
 This document summarizes the installation process for running under Ubuntu 20.04 LTS using standard Ubuntu packages (e.g. Apache2, Jetty9, OpenJDK 11) where appropriate. This hopely will ease running an IdP service under cloud-init and Multipass.
 
@@ -13,7 +13,7 @@ This document summarizes the installation process for running under Ubuntu 20.04
 Requirements
 ------------
 
-- Tomcat 9 (e.g. Ubuntu 20.04 LTS, tomcat9)
+- Jetty 9 (e.g. Ubuntu 20.04 LTS, tomcat9)
 - OpenJDK 11   (e.g. Ubuntu 20.04 LTS, default-jdk)
 - The latest identity provider from linked on https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview
 
@@ -72,6 +72,9 @@ On the VM I create that script returned `/usr/lib/jvm/java-11-openjdk-arm64`. I 
 ```
 JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
 ```
+
+You should logout and back in to pickup the JAVA_HOME environment
+variable.
 
 At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
@@ -171,31 +174,8 @@ In my case it installed it in `/opt/shibboleth-idp/war/idp.war`.
 Getting Jetty to know about IdP
 ---------------------------------
 
-The simplest way to install a `.war` file in Jetty is to copy
-it to the Jetty `webapps` directory.  It needs to be owned by
-the Jetty user. On Ubuntu 20.04 LTS the default location for 
-Jetty (JETTY_HOME) resolves to `/var/lib/jetty9` so we want
-to copy our `idp.war` file to `/var/lib/jetty9/webapps/`
-
-```shell
-sudo su
-cp /opt/shibboleth-idp/war/idp.war /var/lib/jetty9/webapps/
-chown jetty:adm /var/lib/jetty9/webapps/idp.war
-exit
-sudo systemctl restart jetty9
-```
-
-We should now try to make sure Jetty is running our service.
-
-```shell
-lynx http://localhost:8080/idp/status
-```
-
-Should return a status page.
-
-A better way to deploy our `idp.war`. A better way is deploy
-a WAR file to Jetty is via a context XML file. To do remove `/var/lib/jetty9/webapps/idp.war` then we can setup using a context file.
-
+Since we've install Shibboleth IdP 4 `/opt/shibboleth-idp` we need
+to provide a "context XML file" to tell Jetty where to find it.
 
 For Jetty a context file lets us leave the WAR file in our Shibboleth-ipd directory and just point at it. The context file must
 match the name as the WAR file, i.e. `idp.xml` for a war file called `idp.war`. Use the command below to create our `idp.xml` in the 
@@ -221,7 +201,7 @@ our `/opt/shibboleth-idp` need to be owned by the jetty user.
     sudo su
     cd /opt/shibboleth-idp
     chown -R jetty:adm logs metadata credentials conf war
-    chown jetty:adm /var/lib/jetty9/webapp/idp.xml
+    chown jetty:adm /var/lib/jetty9/webapps/idp.xml
     exit
     cd $HOME
 ```
@@ -230,6 +210,8 @@ Now we can restart jetty and test our setup.
 
 ```shell
    sudo systemctl restart jetty9
+   sudo systemctl status jetty9
+   # NOTE: You need to way a while, Jetty is slow to restart!!
    lynx http://localhost:8080/idp/status
 ```
 
@@ -254,11 +236,30 @@ to know when things are finally working.
 
 You'll need your Apache 2 setup support SSL as well as reverse proxy.
 On Ubuntu the certificates should go in `/etc/ssl/certs` for the
-public key certific and `/etc/ssl/private` for the private key. You
-can use ACME certs (Let's Encrypt) if you like. The main thing
-is you need to know the full paths to the parts as we need that
-for our virtual host definition we complete later.
+public key certific and `/etc/ssl/private` for the private key.
 
+Since your VM will likely NOT be on a public network I've included
+a Bash script that will create self signed certificates using
+openssl.  The script is called `setup-self-signed-SSL-certs.bash`
+and can be found in either the GitHub repository under "scripts" directory at https://github.com/caltechlibrary/cloud-init-examples and
+should have been "tranfered" into your VM's home directory if you created the VM using `start-vm.bash`. NOTE: `setup-self-signed-SSL-certs.bash` is interactive you'll need to answer the questions posed by `openssl` as it prompts.
+
+```shell
+    bash setup-self-signed-SSL-certs.bash
+```
+
+
+The script will create an "etc/ssl" directory tree in your home directory (e.g. /home/ubuntu). These should be copied to host machines `/etc/ssl/` directory. That can be done with
+
+```
+   sudo cp -vi etc/ssl/certs/* /etc/ssl/certs/
+   sudo cp -vi etc/ssl/private/* /etc/ssl/private/
+```
+
+NOTE: The default Apache configuration described below assumes certs in matching those created by the script. If you get your certificates another way (e.g. use ACME certs) you'll need to update the configuration appropriately.
+
+
+Next we need to enable some Apache modules to support using SSL.
 Update your Apache 2 to enable these the following modules
 
 - proxy_http
@@ -309,6 +310,7 @@ that to `/etc/apache2/site-available` and then use the Apache 2
     vi idp.example.edu.conf
     sudo cp idp.example.edu.conf /etc/apache2/sites-available/
     sudo a2ensite idp.example.edu.conf
+    sudo apache2ctl -t
     sudo systemctl restart apache2
 ```
 
@@ -356,8 +358,11 @@ lines.
 
 If the next time you run the multipass shib-idp and it is assigned a different IP number remember to update your hosts' `/etc/hosts` to reflect the new IP number associated with `idp.example.edu`.
 
-NOTE: Chrome just will net let you access the snake oil signed SSL certs used by our VM's Apache. You can create valid certs or use a different web browser, I use Firefox and am able to click through the various warnings.
+NOTE: Chrome just will net let you access self signed or snake oil SSL certs used by our VM's Apache. If you want to use Chrome for continue setup and development you'll need to setup 
 
+You can create valid certs (buy or figure out how to use let's encrypt) or use a different web browser. I use Firefox and am able to click through the various warnings.
+
+### Configuring and populating out IdP service
 
 Now for the second step, populating our IdP.
 
