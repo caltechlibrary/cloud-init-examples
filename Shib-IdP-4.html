@@ -329,6 +329,7 @@ user.</p>
     cd $HOME</code></pre>
 <p>Now we can restart jetty and test our setup.</p>
 <pre class="shell"><code>   sudo systemctl restart jetty9
+   sudo systemctl status jetty9
    # NOTE: You need to way a while, Jetty is slow to restart!!
    lynx http://localhost:8080/idp/status</code></pre>
 <p>If we see the Shibboleth IdP 4 status page we’re ready to proceed to
@@ -345,10 +346,28 @@ finally working.</p>
 <p>You’ll need your Apache 2 setup support SSL as well as reverse proxy.
 On Ubuntu the certificates should go in <code>/etc/ssl/certs</code> for
 the public key certific and <code>/etc/ssl/private</code> for the
-private key. You can use ACME certs (Let’s Encrypt) if you like. The
-main thing is you need to know the full paths to the parts as we need
-that for our virtual host definition we complete later.</p>
-<p>Update your Apache 2 to enable these the following modules</p>
+private key.</p>
+<p>Since your VM will likely NOT be on a public network I’ve included a
+Bash script that will create self signed certificates using openssl. The
+script is called <code>setup-self-signed-SSL-certs.bash</code> and can
+be found in either the GitHub repository under “scripts” directory at
+https://github.com/caltechlibrary/cloud-init-examples and should have
+been “tranfered” into your VM’s home directory if you created the VM
+using <code>start-vm.bash</code>. NOTE:
+<code>setup-self-signed-SSL-certs.bash</code> is interactive you’ll need
+to answer the questions posed by <code>openssl</code> as it prompts.</p>
+<pre class="shell"><code>    bash setup-self-signed-SSL-certs.bash</code></pre>
+<p>The script will create an “etc/ssl” directory tree in your home
+directory (e.g. /home/ubuntu). These should be copied to host machines
+<code>/etc/ssl/</code> directory. That can be done with</p>
+<pre><code>   sudo cp -vi etc/ssl/certs/* /etc/ssl/certs/
+   sudo cp -vi etc/ssl/private/* /etc/ssl/private/</code></pre>
+<p>NOTE: The default Apache configuration described below assumes certs
+in matching those created by the script. If you get your certificates
+another way (e.g. use ACME certs) you’ll need to update the
+configuration appropriately.</p>
+<p>Next we need to enable some Apache modules to support using SSL.
+Update your Apache 2 to enable these the following modules</p>
 <ul>
 <li>proxy_http</li>
 <li>ssl</li>
@@ -420,11 +439,8 @@ different IP number remember to update your hosts’
 <code>/etc/hosts</code> to reflect the new IP number associated with
 <code>idp.example.edu</code>.</p>
 <p>NOTE: Chrome just will net let you access self signed or snake oil
-SSL certs used by our VM’s Apache. You can get Chrome to accept
-localhost inscure certificate with
-<code>chrome://flags/#allow-insecure-localhost</code> and set the
-setting to “enable” then reload Chrome but this doesn’t work for the VM
-as it is a separate IP address we’re using.</p>
+SSL certs used by our VM’s Apache. If you want to use Chrome for
+continue setup and development you’ll need to setup</p>
 <p>You can create valid certs (buy or figure out how to use let’s
 encrypt) or use a different web browser. I use Firefox and am able to
 click through the various warnings.</p>
