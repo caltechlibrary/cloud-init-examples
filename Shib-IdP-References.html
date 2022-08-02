@@ -208,5 +208,48 @@ href="https://iam.harvard.edu/resources/saml-shibboleth-integration">harvard</a>
 <li>this documents using an Apache htpasswd type file</li>
 </ul></li>
 </ul>
+<h2 id="cut-text-save-if-i-need-later">cut text, save if I need
+later</h2>
+<p>——– START CUT ——————– The is hinted at in two places of the
+Shibboleth confluence documentation site: <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631611/PasswordAuthnConfiguration">PasswordAuthentication</a>
+and <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1274544392/HTPasswdAuthnConfiguration">HTPasswdAuthnConfiguration</a>.
+The later actually shows an example of what needs to change in the
+“bean” element so the Java class and use the htpasswd file. Unfortunetly
+that is about all it shows. In the former page there is a mention of a
+<code>modules.sh</code> program to enable modules like Password base
+authentication. Fortunately that does respond to the
+<code>--help</code>. Based on that I know their example is first tests
+if the module is already enabled and stops or proceeds to enable it
+(we’ll also going to enable the “Hello World” flow to support
+testing).</p>
+<pre class="shell"><code>    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.authn.Password
+    ./bin/module.sh -e idp.authn.Password</code></pre>
+<p>In comment the
+<code>&lt;bean parent="shibboleth.HTPasswdValidator" p:resource="%{idp.home}/credentials/demo.htpasswd" /&gt;</code>
+and save the file.</p>
+<pre class="shell"><code>    vi conf/authn/password-authn-config.xml</code></pre>
+<p>You can create our <code>demo.htpasswd</code> file in
+<code>credentials/demo.htpasswd</code> using Apache
+<code>htpasswd</code> program. That file needs to be owned by
+<code>jetty.adm</code>.</p>
+<pre><code>   htpasswd -c credentials/demo.htpasswd testuser
+   chown jetty:adm credentials/demo.htpasswd
+   chmod 660 credentials/demo.htpasswd</code></pre>
+<p>The “views” or HTML pages supplied by Shibboleth are found in the
+“views” directory. At this point you should see ones for
+<code>login.vm</code> as well as other parts of the “flow” like
+<code>logout.vm</code> and <code>login-error.vm</code>.</p>
+<p>But, at least in my build the test does actually detact that is
+enabled. Run the command separately yields better results and ensure
+0that the login view have been created.</p>
+<p>Checking the <code>/idp/status</code> end point to make sure the IdP
+software is working, we can then try the</p>
+<p>If we see the Shibboleth IdP 4 status page we’re ready to proceed to
+setting up Apache 2 as a reverse proxy for our IdP.</p>
+<p>——– END CUT ———————-</p>
 </body>
 </html>
