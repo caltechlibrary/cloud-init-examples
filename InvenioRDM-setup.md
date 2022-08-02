@@ -22,20 +22,20 @@ VM Setup Recipe
 Here are a summary of the steps. The full commands can be found below.
 1. Clone the cloud-init-examples repository
 2. change to that directory
-3. Use `start-invenio-vm.bash` to create the VM and start it the first time
+3. Use `start-vm.bash invenio-rdm xlarge` to create the VM and start it the first time
 4. Add a password for the user you're going to log in with, e.g. ubuntu user
 5. Install `nvm`, the node version manager
 6. Before you reboot, make sure xrdp and ubuntu-desktop are installed and updated
 7. Reboot the VM just to make sure everything is working correctly
-8. Use `multipass info invenio` to find the IP address and running state of the VM before proceeding to the next section
+8. Use `multipass info invenio-rdm` to find the IP address and running state of the VM before proceeding to the next section
 
-On your host machine where you've installed [multipass](https://multipass.run "Multipass website") you can issuing the following commands.
+On your host machine where you've installed [multipass](https://multipass.run "Multipass website") you can issue the following commands.
 
 ```shell
     git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
-    ./start-vm.bash invenio xlarge
-    multipass shell invenio
+    ./start-vm.bash invenio-rdm xlarge
+    multipass shell invenio-rdm
     sudo passwd ubuntu
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     sudo apt update
@@ -43,12 +43,13 @@ On your host machine where you've installed [multipass](https://multipass.run "M
     sudo apt autoremove
     sudo apt autoclean
     sudo reboot
-    multipass info invenio
+    multipass info invenio-rdm
 ```
 
 Before we go forward Ubuntu gets updates. It's a good idea to also update your VM's Ubuntu even when running a LTS.
 
-NOTE: When you reboot the VM you'll be dumpted out at your host system's shell. Wait a minute or then use Use the last command `multipass info invenio` to get the reboot status and to show the IP addresses we need to connect to the VM.
+NOTE: When you reboot the VM you'll be dumpted out at your host system's shell. Wait a minute or then use Use the last command `multipass info invenio-rdm` to get the reboot status and to show the IP addresses we need to connect to the VM.
+
 
 InvenioRDM Configuration
 -------------------------------
@@ -56,7 +57,7 @@ InvenioRDM Configuration
 Now we can connect to our vm in our terminal window 
 
 ```shell
-    multipass shell invenio
+    multipass shell invenio-rdm
 ```
 
 If you're going to do development InvenioRDM needs NodeJS 14.0.0 to build properly.  We need to install NodeJS
@@ -64,7 +65,7 @@ using `nvm` to meet that requirement.
 
 
 ```shell
-    nvm install 14.0.0
+    nvm install 14
 ```
 
 Now we can follow the instructions based on https://inveniordm.docs.cern.ch/install/build-setup-run/.
@@ -108,12 +109,17 @@ SITE_API_URL = "https://192.168.64.8/api"
 Now we can run the application
 
 ```shell
-    invenio-cli run -h 192.168.64.8
+    invenio-cli run --host 192.168.64.8
 ```
 
-You can now open firefox and go to your VM IP to see your Invenio instance. Other browsers will work, but have more annoying warnings about the self-signed SSL certificate that is used.
+NOTE: The first to you use `invenio-cli run` it will install system vocabularies, this takes a few minutes. You can press ctl-C once the process once log messages stop appearing. 
 
-Sometimes you need to tear down and start over an development InvenioRDM instance.
+NOTE: Invenio runs on port 5000 by default, the URL would look like https://192.168.64.8:5000 for our example.
+
+
+You can now open firefox and go to your VM's IP address port 5000 to see your Invenio instance. Other browsers may work, but have more annoying warnings about the self-signed SSL certificate that is used. Chrome will just fail unless you get Let's Encrypt and cerbot working.
+
+Sometimes you need to tear down and start over an development InvenioRDM instance. These need to be run from the directory where you installed the Invenio demo.
 
 ```shell
     invenio-cli services stop

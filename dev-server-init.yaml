@@ -16,6 +16,7 @@ packages:
   - lynx
   - python3-dev
   - python3-pip
+  - python-is-python3
   - pandoc
   - rsync
   - libexpat1

@@ -1,25 +1,29 @@
 #cloud-config
 package_update: true
 package_upgrade: true
+fqdn: caltechdata.local
 packages:
   - build-essential
   - git
   - snapcraft
   - curl 
+  - python2
   - python3-dev
+  - python-is-python3
   - python3-pip
   - rsync
   - nginx 
   - imagemagick
   - libxml2-dev
   - libxmlsec1-dev
+  - docker.io
+  - docker-compose
 groups:
   - docker
   - staff
   - www-data
 snap:
   commands:
-  - [ install, docker ]
   - [ install, certbot ]
 runcmd:
   - adduser ubuntu docker

@@ -6,7 +6,7 @@
     "dateCreated": "2022-04-25",
     "issueTracker": "https://github.com/caltechlibrary/cloud-init-examples/issues",
     "name": "cloud-init-examples",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.",
     "developmentStatus": "concept",
     "programmingLanguage": [
@@ -17,19 +17,20 @@
         "multipass VM"
     ],
     "operatingSystem": [
-        "Ubuntu"
+        "Ubuntu",
+        "macOS",
+        "Windows"
     ],
     "softwareRequirements": [
         "multipass",
-        "xrdp",
-        "ubuntu-desktop",
-        "a rdp remote desktop viewer"
+        "A rdp remote desktop viewer",
+        "Windows requires Windows WSL"
     ],
     "author": [
         {
             "@type": "Person",
             "@id": "https://orcid.org/0000-0003-0900-6903",
-            "givenName": "Robert",
+            "givenName": "R. S.",
             "familyName": "Doiel",
             "email": "rsdoiel@caltech.edu",
             "affiliation": {

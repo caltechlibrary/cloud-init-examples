@@ -199,73 +199,9 @@ Now we can restart jetty and test our setup.
    lynx http://localhost:8080/idp/status
 ```
 
-The status end point describes the IdP setup.
-
-FIXME: All the prose is broken here, I haven't gotten the IdP to actually use the htpasswd file correctly and the admin user setup for Hello world returns 500 errors.
-
-### Next two steps
-
-As stated in [Configuration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631515/Configuration) the first step to bring up an IdP from scratch is to configure
-
-1. [Authentication](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631601)
-2. [Attribute Resolver](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631549)
-
-Then we can move onto the [Hello World](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553) and see if things actually work.
-
-
-Configure authentication starts with loading the idp.authn.Password
-module.
-
-```shell
-    # NOTE: we should be the root user and
-    # the working directory is assumed to be /opt/shibboleth-idp
-    # where we installed our IdP software.
-    bin/module.sh -t idp.authn.Password
-    bin/module.sh -e idp.authn.Password
-```
-
-Update `conf/authn/password-authn-config.xml` uncommenting the line with `shibboleth.HTPasswdValidator` and commenting out the line with `shibboleth.LDAPValidator` .  We also need to create the "demo.htpasswd" file in the `credentials` directory.
-
-```shell
-    vi conf/authn/password-authn-config.xml
-    htpasswd -c credentials/demo.htpasswd admin
-    chown jetty:adm credentials/demo.htpasswd
-    chmod 660 credentials/demo.htpasswd
-```
-
-FIXME: This isn't enough to configure the authentication, haven't even got to the Attribute Resolver yet!
-
-
-### Setting Hello World to test
-
-I recommend enabling the "hello" or "hello world" module. Flows are the data paths take when a user authenticates via Shibboleth's IdP. The "hello" module provides a way to see if the IdP is working without having a service provider implemented yet (see [HelloWorldConfiguration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553/HelloWorldConfiguration) for details).
-
-Modules can be enable, disabled and tests. Shibboleth IdP 4 package provides a script for that. The `modules.sh` script is found in the `bin` folder. It has a `--help` option which explains how it can be used.
-
-While the status end point indicates the `idp.admin.Hello` module is enabled it doesn't work  out of the box.  These are the step I took
-to get it working and confirm the IdP was working before going on to configure it.
-
-```shell
-    sudo su
-    cd /opt/shibboleth-idp
-    ./bin/module.sh -t idp.admin.Hello
-    ./bin/module.sh -e idp.admin.Hello
-```
-
-FIXME: This is failing, status 500, probably because authentication module isn't configured yet though there is some ambiguity in the docs
-
-If this works then we can test it.
-
-```shell
-    lynx http://localhost:8080/idp/profile/admin/hello
-```
-
-If you get a 500 error then something isn't working yet.  It is probably something more that needs to be configured.
-
-
-### Configuring, populating accounts for our IdP service
-
-FIXME: This is a section that I describe how to to setup up additional non-admin accounts in the htpasswd file. ...
+NOTE: The status end point describes the IdP setup. It indicates only
+that the WAR file is installed and running in Jetty. You don't
+have a working IdP yet!!
 
 
 Configuring Apache 2
@@ -385,37 +321,11 @@ lynx https://idp.example.edu/idp/status
 
 If we see the Shibboeth IdP status page we're good to proceed.
 
+
 Configuring our IdP
 -------------------
 
-Unfornately we're not done quite yet. We need to actually beable to use our IdP.  This involves two parts, first we want to configure our host environment to see our `idp.example.edu` host provided by the multipass instance.  The second is we need to configure the idp itself.
-
-If you are running macOS, Linux or another Unix there is a file called `/etc/hosts`. This file can contain locally defined ip address and machine names.  You need to know the IP address of your multipass instance.
-
-```shell
-    multipass info shib-idp
-```
-
-In my case it reported "192.168.64.155" (your will be different)
-
-I can make my local machine treat that IP address as `idp.example.edu` by adding a line to the `/etc/hosts` file. In my case I added two
-lines.
-
-```
-# This is a multipass instance of my Shibboleth IdP
-192.168.64.155 idp.example.edu idp
-```
-
-If the next time you run the multipass shib-idp and it is assigned a different IP number remember to update your hosts' `/etc/hosts` to reflect the new IP number associated with `idp.example.edu`.
-
-NOTE: Chrome just will not let you access a website with self signed certs. This is true of your VM. I gave up trying to get this to work and just used Firefox which will warn you but let you proceed.
-
-
-
-FIXME: Need to document options and setting things up here.
-
-Wrapping things up
-------------------
+FIXME: Need to describe actually configuring the IdP service. 
 
 See [Shibboleth IdP References](Shib-IdP-References.html)
 

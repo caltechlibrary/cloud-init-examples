@@ -189,17 +189,17 @@ package via <code>sudo apt install remmina</code> or
 <h2 id="vm-setup-recipe">VM Setup Recipe</h2>
 <p>Here are a summary of the steps. The full commands can be found
 below. 1. Clone the cloud-init-examples repository 2. change to that
-directory 3. Use <code>start-invenio-vm.bash</code> to create the VM and
-start it the first time 4. Add a password for the user you’re going to
-log in with, e.g. ubuntu user 5. Install <code>nvm</code>, the node
-version manager 6. Before you reboot, make sure xrdp and ubuntu-desktop
-are installed and updated 7. Reboot the VM just to make sure everything
-is working correctly 8. Use <code>multipass info invenio</code> to find
-the IP address and running state of the VM before proceeding to the next
-section</p>
+directory 3. Use <code>start-vm.bash invenio xlarge</code> to create the
+VM and start it the first time 4. Add a password for the user you’re
+going to log in with, e.g. ubuntu user 5. Install <code>nvm</code>, the
+node version manager 6. Before you reboot, make sure xrdp and
+ubuntu-desktop are installed and updated 7. Reboot the VM just to make
+sure everything is working correctly 8. Use
+<code>multipass info invenio</code> to find the IP address and running
+state of the VM before proceeding to the next section</p>
 <p>On your host machine where you’ve installed <a
 href="https://multipass.run" title="Multipass website">multipass</a> you
-can issuing the following commands.</p>
+can issue the following commands.</p>
 <pre class="shell"><code>    git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
     ./start-vm.bash invenio xlarge
@@ -224,7 +224,7 @@ the IP addresses we need to connect to the VM.</p>
 <p>If you’re going to do development InvenioRDM needs NodeJS 14.0.0 to
 build properly. We need to install NodeJS using <code>nvm</code> to meet
 that requirement.</p>
-<pre class="shell"><code>    nvm install 14.0.0</code></pre>
+<pre class="shell"><code>    nvm install 14</code></pre>
 <p>Now we can follow the instructions based on
 https://inveniordm.docs.cern.ch/install/build-setup-run/.</p>
 <pre><code>    invenio-cli init rdm -c v9.1</code></pre>
