@@ -9,7 +9,7 @@ VERSION = $(shell grep '"version":' codemeta.json | cut -d\"  -f 4)
 
 BRANCH = $(shell git branch | grep '* ' | cut -d\  -f 2)
 
-MARKDOWN_PAGES =$(shell ls -1 *.md | sed -E 's/\.md//g')
+MARKDOWN_PAGES =$(shell ls -1 *.md drafts/*.md | sed -E 's/\.md//g')
 
 HTML_PAGES = $(shell ls -1 *.md | sed -E 's/\.md/.html/g')
 

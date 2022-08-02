@@ -1,0 +1,43 @@
+
+
+
+## cut text, save if I need later
+
+-------- START CUT --------------------
+The is hinted at in two places of the Shibboleth confluence documentation site: [PasswordAuthentication](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631611/PasswordAuthnConfiguration) and [HTPasswdAuthnConfiguration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1274544392/HTPasswdAuthnConfiguration). The later actually shows an example of what needs to change in the "bean" element so the Java class and use the htpasswd file. Unfortunetly that is about all it shows. In the former page there is a mention of a `modules.sh` program to enable modules like Password base authentication. Fortunately that does respond to the `--help`. Based on that I know their example is first tests if the module is already enabled and stops or proceeds to enable it (we'll also going to enable the "Hello World" flow to support testing).
+
+
+```shell
+    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.authn.Password
+    ./bin/module.sh -e idp.authn.Password
+```
+
+In comment the `<bean parent="shibboleth.HTPasswdValidator" p:resource="%{idp.home}/credentials/demo.htpasswd" />` and save the file.
+
+```shell
+    vi conf/authn/password-authn-config.xml
+```
+
+You can create our `demo.htpasswd` file in `credentials/demo.htpasswd`
+using Apache `htpasswd` program. That file needs to be owned by `jetty.adm`. 
+
+```
+   htpasswd -c credentials/demo.htpasswd testuser
+   chown jetty:adm credentials/demo.htpasswd
+   chmod 660 credentials/demo.htpasswd
+```
+
+The "views" or HTML pages supplied by Shibboleth are found in the "views" directory. At this point you should see ones for `login.vm` as well as other parts of the "flow" like `logout.vm` and `login-error.vm`.
+
+But, at least in my build the test does actually detact that is enabled. Run the command separately yields better results and ensure 0that the login view have been created.
+
+Checking the `/idp/status` end point to make sure the IdP software is working, we can then try the 
+
+
+
+If we see the Shibboleth IdP 4 status page we're ready to proceed to
+setting up Apache 2 as a reverse proxy for our IdP.
+
+-------- END CUT ----------------------

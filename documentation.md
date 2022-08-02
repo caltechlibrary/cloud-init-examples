@@ -10,7 +10,8 @@ Cloud Init Documentation
 - Examples
     - [Invenio RDM Setup](InvenioRDM-setup.html)
     - [Shibboleth IdP 4 WAR file install](Shib-IdP-4.html)
+- Appendix
+    - [Shibboleth IdP References](Shib-IdP-References.html)
 - [About](about.html)
-
 
 
