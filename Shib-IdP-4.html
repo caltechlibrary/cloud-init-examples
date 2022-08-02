@@ -321,73 +321,9 @@ user.</p>
    sudo systemctl status jetty9
    # NOTE: You need to wait a while, Jetty is slow to restart!!
    lynx http://localhost:8080/idp/status</code></pre>
-<p>The status end point describes the IdP setup.</p>
-<p>FIXME: All the prose is broken here, I haven’t gotten the IdP to
-actually use the htpasswd file correctly and the admin user setup for
-Hello world returns 500 errors.</p>
-<h3 id="next-two-steps">Next two steps</h3>
-<p>As stated in <a
-href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631515/Configuration">Configuration</a>
-the first step to bring up an IdP from scratch is to configure</p>
-<ol type="1">
-<li><a
-href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631601">Authentication</a></li>
-<li><a
-href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631549">Attribute
-Resolver</a></li>
-</ol>
-<p>Then we can move onto the <a
-href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553">Hello
-World</a> and see if things actually work.</p>
-<p>Configure authentication starts with loading the idp.authn.Password
-module.</p>
-<pre class="shell"><code>    # NOTE: we should be the root user and
-    # the working directory is assumed to be /opt/shibboleth-idp
-    # where we installed our IdP software.
-    bin/module.sh -t idp.authn.Password
-    bin/module.sh -e idp.authn.Password</code></pre>
-<p>Update <code>conf/authn/password-authn-config.xml</code> uncommenting
-the line with <code>shibboleth.HTPasswdValidator</code> and commenting
-out the line with <code>shibboleth.LDAPValidator</code> . We also need
-to create the “demo.htpasswd” file in the <code>credentials</code>
-directory.</p>
-<pre class="shell"><code>    vi conf/authn/password-authn-config.xml
-    htpasswd -c credentials/demo.htpasswd admin
-    chown jetty:adm credentials/demo.htpasswd
-    chmod 660 credentials/demo.htpasswd</code></pre>
-<p>FIXME: This isn’t enough to configure the authentication, haven’t
-even got to the Attribute Resolver yet!</p>
-<h3 id="setting-hello-world-to-test">Setting Hello World to test</h3>
-<p>I recommend enabling the “hello” or “hello world” module. Flows are
-the data paths take when a user authenticates via Shibboleth’s IdP. The
-“hello” module provides a way to see if the IdP is working without
-having a service provider implemented yet (see <a
-href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553/HelloWorldConfiguration">HelloWorldConfiguration</a>
-for details).</p>
-<p>Modules can be enable, disabled and tests. Shibboleth IdP 4 package
-provides a script for that. The <code>modules.sh</code> script is found
-in the <code>bin</code> folder. It has a <code>--help</code> option
-which explains how it can be used.</p>
-<p>While the status end point indicates the <code>idp.admin.Hello</code>
-module is enabled it doesn’t work out of the box. These are the step I
-took to get it working and confirm the IdP was working before going on
-to configure it.</p>
-<pre class="shell"><code>    sudo su
-    cd /opt/shibboleth-idp
-    ./bin/module.sh -t idp.admin.Hello
-    ./bin/module.sh -e idp.admin.Hello</code></pre>
-<p>FIXME: This is failing, status 500, probably because authentication
-module isn’t configured yet though there is some ambiguity in the
-docs</p>
-<p>If this works then we can test it.</p>
-<pre class="shell"><code>    lynx http://localhost:8080/idp/profile/admin/hello</code></pre>
-<p>If you get a 500 error then something isn’t working yet. It is
-probably something more that needs to be configured.</p>
-<h3
-id="configuring-populating-accounts-for-our-idp-service">Configuring,
-populating accounts for our IdP service</h3>
-<p>FIXME: This is a section that I describe how to to setup up
-additional non-admin accounts in the htpasswd file. …</p>
+<p>NOTE: The status end point describes the IdP setup. It indicates only
+that the WAR file is installed and running in Jetty. You don’t have a
+working IdP yet!!</p>
 <h2 id="configuring-apache-2">Configuring Apache 2</h2>
 <p>We use Apache2 to “reverse proxy” to our Jetty service. That takes
 some additional setup. Let’s create some content to know when things are
@@ -474,31 +410,7 @@ certs).</p>
 <pre><code>lynx https://idp.example.edu/idp/status</code></pre>
 <p>If we see the Shibboeth IdP status page we’re good to proceed.</p>
 <h2 id="configuring-our-idp">Configuring our IdP</h2>
-<p>Unfornately we’re not done quite yet. We need to actually beable to
-use our IdP. This involves two parts, first we want to configure our
-host environment to see our <code>idp.example.edu</code> host provided
-by the multipass instance. The second is we need to configure the idp
-itself.</p>
-<p>If you are running macOS, Linux or another Unix there is a file
-called <code>/etc/hosts</code>. This file can contain locally defined ip
-address and machine names. You need to know the IP address of your
-multipass instance.</p>
-<pre class="shell"><code>    multipass info shib-idp</code></pre>
-<p>In my case it reported “192.168.64.155” (your will be different)</p>
-<p>I can make my local machine treat that IP address as
-<code>idp.example.edu</code> by adding a line to the
-<code>/etc/hosts</code> file. In my case I added two lines.</p>
-<pre><code># This is a multipass instance of my Shibboleth IdP
-192.168.64.155 idp.example.edu idp</code></pre>
-<p>If the next time you run the multipass shib-idp and it is assigned a
-different IP number remember to update your hosts’
-<code>/etc/hosts</code> to reflect the new IP number associated with
-<code>idp.example.edu</code>.</p>
-<p>NOTE: Chrome just will not let you access a website with self signed
-certs. This is true of your VM. I gave up trying to get this to work and
-just used Firefox which will warn you but let you proceed.</p>
-<p>FIXME: Need to document options and setting things up here.</p>
-<h2 id="wrapping-things-up">Wrapping things up</h2>
+<p>FIXME: Need to describe actually configuring the IdP service.</p>
 <p>See <a href="Shib-IdP-References.html">Shibboleth IdP
 References</a></p>
 </body>

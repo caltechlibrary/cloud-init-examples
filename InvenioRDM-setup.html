@@ -189,21 +189,21 @@ package via <code>sudo apt install remmina</code> or
 <h2 id="vm-setup-recipe">VM Setup Recipe</h2>
 <p>Here are a summary of the steps. The full commands can be found
 below. 1. Clone the cloud-init-examples repository 2. change to that
-directory 3. Use <code>start-vm.bash invenio xlarge</code> to create the
-VM and start it the first time 4. Add a password for the user you’re
+directory 3. Use <code>start-vm.bash invenio-rdm xlarge</code> to create
+the VM and start it the first time 4. Add a password for the user you’re
 going to log in with, e.g. ubuntu user 5. Install <code>nvm</code>, the
 node version manager 6. Before you reboot, make sure xrdp and
 ubuntu-desktop are installed and updated 7. Reboot the VM just to make
 sure everything is working correctly 8. Use
-<code>multipass info invenio</code> to find the IP address and running
-state of the VM before proceeding to the next section</p>
+<code>multipass info invenio-rdm</code> to find the IP address and
+running state of the VM before proceeding to the next section</p>
 <p>On your host machine where you’ve installed <a
 href="https://multipass.run" title="Multipass website">multipass</a> you
 can issue the following commands.</p>
 <pre class="shell"><code>    git clone git@github.com:caltechlibrary/cloud-init-examples
     cd cloud-init-examples
-    ./start-vm.bash invenio xlarge
-    multipass shell invenio
+    ./start-vm.bash invenio-rdm xlarge
+    multipass shell invenio-rdm
     sudo passwd ubuntu
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     sudo apt update
@@ -211,16 +211,16 @@ can issue the following commands.</p>
     sudo apt autoremove
     sudo apt autoclean
     sudo reboot
-    multipass info invenio</code></pre>
+    multipass info invenio-rdm</code></pre>
 <p>Before we go forward Ubuntu gets updates. It’s a good idea to also
 update your VM’s Ubuntu even when running a LTS.</p>
 <p>NOTE: When you reboot the VM you’ll be dumpted out at your host
 system’s shell. Wait a minute or then use Use the last command
-<code>multipass info invenio</code> to get the reboot status and to show
-the IP addresses we need to connect to the VM.</p>
+<code>multipass info invenio-rdm</code> to get the reboot status and to
+show the IP addresses we need to connect to the VM.</p>
 <h2 id="inveniordm-configuration">InvenioRDM Configuration</h2>
 <p>Now we can connect to our vm in our terminal window</p>
-<pre class="shell"><code>    multipass shell invenio</code></pre>
+<pre class="shell"><code>    multipass shell invenio-rdm</code></pre>
 <p>If you’re going to do development InvenioRDM needs NodeJS 14.0.0 to
 build properly. We need to install NodeJS using <code>nvm</code> to meet
 that requirement.</p>
@@ -254,12 +254,20 @@ SITE_UI_URL = &quot;https://192.168.64.8&quot;
 
 SITE_API_URL = &quot;https://192.168.64.8/api&quot;</code></pre>
 <p>Now we can run the application</p>
-<pre class="shell"><code>    invenio-cli run -h 192.168.64.8</code></pre>
-<p>You can now open firefox and go to your VM IP to see your Invenio
-instance. Other browsers will work, but have more annoying warnings
-about the self-signed SSL certificate that is used.</p>
+<pre class="shell"><code>    invenio-cli run --host 192.168.64.8</code></pre>
+<p>NOTE: The first to you use <code>invenio-cli run</code> it will
+install system vocabularies, this takes a few minutes. You can press
+ctl-C once the process once log messages stop appearing.</p>
+<p>NOTE: Invenio runs on port 5000 by default, the URL would look like
+https://192.168.64.8:5000 for our example.</p>
+<p>You can now open firefox and go to your VM’s IP address port 5000 to
+see your Invenio instance. Other browsers may work, but have more
+annoying warnings about the self-signed SSL certificate that is used.
+Chrome will just fail unless you get Let’s Encrypt and cerbot
+working.</p>
 <p>Sometimes you need to tear down and start over an development
-InvenioRDM instance.</p>
+InvenioRDM instance. These need to be run from the directory where you
+installed the Invenio demo.</p>
 <pre class="shell"><code>    invenio-cli services stop
     invenio-cli services destroy
     invenio-cli destroy</code></pre>
