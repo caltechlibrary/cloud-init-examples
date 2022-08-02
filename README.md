@@ -142,6 +142,7 @@ I have provided three Bash scripts for starting/launching, getting info and stop
 1. start-vm.bash - starts an existing or launches a new virtual machine based on a related cloud init YAML file. If you're creating the machine pass a zie of nano, micro, small, medium, large, xlarge, or 2xlarge to create a machine with a similar profile to the AWS EC2 T4g sizes, see https://aws.amazon.com/ec2/instance-types/t4/
 2. stats-vm.bash - will return information about the machine (i.e. it runs `multipass info $MACHINE`)
 3. stop-vm-.bash - will stop the machine
+4. remove-vm.bash - will delete and purge a machine
 
 If you've defined a primary name for the machine the Bash scripts can be used without any additoinal parameters. If
 you provide a machine name as a parameter then the scripts will work with that machine name.
