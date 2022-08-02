@@ -80,22 +80,6 @@ At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.
 
-Finnally we're going to create a startup definition for Jetty 9.
-
-```shell
-    sudo bash -c 'cat > /var/lib/jetty9/webapps/idp.xml <<EOF
-<Configure class="org.eclipse.jetty.webapp.WebAppContext">
-  <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
-  <Set name="contextPath">/idp</Set>
-  <Set name="extractWAR">false</Set>
-  <Set name="copyWebDir">false</Set>
-  <Set name="copyWebInf">true</Set>
-  <Set name="persistTempDirectory">false</Set>
-</Configure>
-EOF'
-```
-
-
 Installing the Shibboleth IdP 4 software
 ----------------------------------------
 
@@ -201,7 +185,7 @@ our `/opt/shibboleth-idp` need to be owned by the jetty user.
     sudo su
     cd /opt/shibboleth-idp
     chown -R jetty:adm logs metadata credentials conf war
-    chown jetty:adm /var/lib/jetty9/webapps/idp.xml
+    chown -R jetty:adm /var/lib/jetty9/webapps/idp.xml
     exit
     cd $HOME
 ```
@@ -211,13 +195,116 @@ Now we can restart jetty and test our setup.
 ```shell
    sudo systemctl restart jetty9
    sudo systemctl status jetty9
-   # NOTE: You need to way a while, Jetty is slow to restart!!
+   # NOTE: You need to wait a while, Jetty is slow to restart!!
    lynx http://localhost:8080/idp/status
 ```
+
+The status end point describes the IdP setup.
+
+FIXME: All the prose is broken here, I haven't gotten the IdP to actually use the htpasswd file correctly and the admin user setup for Hello world returns 500 errors.
+
+### Next two steps
+
+As stated in [Configuration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631515/Configuration) the first step to bring up an IdP from scratch is to configure
+
+1. [Authentication](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631601)
+2. [Attribute Resolver](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631549)
+
+Then we can move onto the [Hello World](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553) and see if things actually work.
+
+
+Configure authentication starts with loading the idp.authn.Password
+module.
+
+```shell
+    # NOTE: we should be the root user and
+    # the working directory is assumed to be /opt/shibboleth-idp
+    # where we installed our IdP software.
+    bin/module.sh -t idp.authn.Password
+    bin/module.sh -e idp.authn.Password
+```
+
+Update `conf/authn/password-authn-config.xml` uncommenting the line with `shibboleth.HTPasswdValidator` and commenting out the line with `shibboleth.LDAPValidator` .  We also need to create the "demo.htpasswd" file in the `credentials` directory.
+
+```shell
+    vi conf/authn/password-authn-config.xml
+    htpasswd -c credentials/demo.htpasswd admin
+    chown jetty:adm credentials/demo.htpasswd
+    chmod 660 credentials/demo.htpasswd
+```
+
+FIXME: This isn't enough to configure the authentication, haven't even got to the Attribute Resolver yet!
+
+
+### Setting Hello World to test
+
+I recommend enabling the "hello" or "hello world" module. Flows are the data paths take when a user authenticates via Shibboleth's IdP. The "hello" module provides a way to see if the IdP is working without having a service provider implemented yet (see [HelloWorldConfiguration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553/HelloWorldConfiguration) for details).
+
+Modules can be enable, disabled and tests. Shibboleth IdP 4 package provides a script for that. The `modules.sh` script is found in the `bin` folder. It has a `--help` option which explains how it can be used.
+
+While the status end point indicates the `idp.admin.Hello` module is enabled it doesn't work  out of the box.  These are the step I took
+to get it working and confirm the IdP was working before going on to configure it.
+
+```shell
+    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.admin.Hello
+    ./bin/module.sh -e idp.admin.Hello
+```
+
+FIXME: This is failing, status 500, probably because authentication module isn't configured yet though there is some ambiguity in the docs
+
+If this works then we can test it.
+
+```shell
+    lynx http://localhost:8080/idp/profile/admin/hello
+```
+
+If you get a 500 error then something isn't working yet.  It is probably something more that needs to be configured.
+
+
+### Configuring, populating accounts for our IdP service
+
+FIXME: This is a section that I describe how to to setup up additional non-admin accounts in the htpasswd file. ...
+
+-------- START CUT --------------------
+The is hinted at in two places of the Shibboleth confluence documentation site: [PasswordAuthentication](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631611/PasswordAuthnConfiguration) and [HTPasswdAuthnConfiguration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1274544392/HTPasswdAuthnConfiguration). The later actually shows an example of what needs to change in the "bean" element so the Java class and use the htpasswd file. Unfortunetly that is about all it shows. In the former page there is a mention of a `modules.sh` program to enable modules like Password base authentication. Fortunately that does respond to the `--help`. Based on that I know their example is first tests if the module is already enabled and stops or proceeds to enable it (we'll also going to enable the "Hello World" flow to support testing).
+
+
+```shell
+    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.authn.Password
+    ./bin/module.sh -e idp.authn.Password
+```
+
+In comment the `<bean parent="shibboleth.HTPasswdValidator" p:resource="%{idp.home}/credentials/demo.htpasswd" />` and save the file.
+
+```shell
+    vi conf/authn/password-authn-config.xml
+```
+
+You can create our `demo.htpasswd` file in `credentials/demo.htpasswd`
+using Apache `htpasswd` program. That file needs to be owned by `jetty.adm`. 
+
+```
+   htpasswd -c credentials/demo.htpasswd testuser
+   chown jetty:adm credentials/demo.htpasswd
+   chmod 660 credentials/demo.htpasswd
+```
+
+The "views" or HTML pages supplied by Shibboleth are found in the "views" directory. At this point you should see ones for `login.vm` as well as other parts of the "flow" like `logout.vm` and `login-error.vm`.
+
+But, at least in my build the test does actually detact that is enabled. Run the command separately yields better results and ensure 0that the login view have been created.
+
+Checking the `/idp/status` end point to make sure the IdP software is working, we can then try the 
+
+
 
 If we see the Shibboleth IdP 4 status page we're ready to proceed to
 setting up Apache 2 as a reverse proxy for our IdP.
 
+-------- END CUT ----------------------
 
 Configuring Apache 2
 --------------------
@@ -236,13 +323,15 @@ to know when things are finally working.
 
 You'll need your Apache 2 setup support SSL as well as reverse proxy.
 On Ubuntu the certificates should go in `/etc/ssl/certs` for the
-public key certific and `/etc/ssl/private` for the private key.
+public certificates (e.g. ".crt", ".pem") and `/etc/ssl/private` for the private key files (e.g. ".key").
 
 Since your VM will likely NOT be on a public network I've included
 a Bash script that will create self signed certificates using
 openssl.  The script is called `setup-self-signed-SSL-certs.bash`
 and can be found in either the GitHub repository under "scripts" directory at https://github.com/caltechlibrary/cloud-init-examples and
-should have been "tranfered" into your VM's home directory if you created the VM using `start-vm.bash`. NOTE: `setup-self-signed-SSL-certs.bash` is interactive you'll need to answer the questions posed by `openssl` as it prompts.
+should have been "transfered" into your VM's home directory if you created the VM using `start-vm.bash`.
+
+NOTE: `setup-self-signed-SSL-certs.bash` is interactive you'll need to answer the questions posed by `openssl` as it prompts.
 
 ```shell
     bash setup-self-signed-SSL-certs.bash
@@ -257,7 +346,6 @@ The script will create an "etc/ssl" directory tree in your home directory (e.g. 
 ```
 
 NOTE: The default Apache configuration described below assumes certs in matching those created by the script. If you get your certificates another way (e.g. use ACME certs) you'll need to update the configuration appropriately.
-
 
 Next we need to enable some Apache modules to support using SSL.
 Update your Apache 2 to enable these the following modules
@@ -358,13 +446,9 @@ lines.
 
 If the next time you run the multipass shib-idp and it is assigned a different IP number remember to update your hosts' `/etc/hosts` to reflect the new IP number associated with `idp.example.edu`.
 
-NOTE: Chrome just will net let you access self signed or snake oil SSL certs used by our VM's Apache. If you want to use Chrome for continue setup and development you'll need to setup 
+NOTE: Chrome just will not let you access a website with self signed certs. This is true of your VM. I gave up trying to get this to work and just used Firefox which will warn you but let you proceed.
 
-You can create valid certs (buy or figure out how to use let's encrypt) or use a different web browser. I use Firefox and am able to click through the various warnings.
 
-### Configuring and populating out IdP service
-
-Now for the second step, populating our IdP.
 
 FIXME: Need to document options and setting things up here.
 

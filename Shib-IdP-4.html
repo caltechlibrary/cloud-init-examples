@@ -216,17 +216,6 @@ variable.</p>
 <p>At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.</p>
-<p>Finnally we’re going to create a startup definition for Jetty 9.</p>
-<pre class="shell"><code>    sudo bash -c &#39;cat &gt; /var/lib/jetty9/webapps/idp.xml &lt;&lt;EOF
-&lt;Configure class=&quot;org.eclipse.jetty.webapp.WebAppContext&quot;&gt;
-  &lt;Set name=&quot;war&quot;&gt;/opt/shibboleth-idp/war/idp.war&lt;/Set&gt;
-  &lt;Set name=&quot;contextPath&quot;&gt;/idp&lt;/Set&gt;
-  &lt;Set name=&quot;extractWAR&quot;&gt;false&lt;/Set&gt;
-  &lt;Set name=&quot;copyWebDir&quot;&gt;false&lt;/Set&gt;
-  &lt;Set name=&quot;copyWebInf&quot;&gt;true&lt;/Set&gt;
-  &lt;Set name=&quot;persistTempDirectory&quot;&gt;false&lt;/Set&gt;
-&lt;/Configure&gt;
-EOF&#39;</code></pre>
 <h2 id="installing-the-shibboleth-idp-4-software">Installing the
 Shibboleth IdP 4 software</h2>
 <p>While cloud init goes a long way to setting things up there are
@@ -324,16 +313,122 @@ user.</p>
 <pre class="shell"><code>    sudo su
     cd /opt/shibboleth-idp
     chown -R jetty:adm logs metadata credentials conf war
-    chown jetty:adm /var/lib/jetty9/webapps/idp.xml
+    chown -R jetty:adm /var/lib/jetty9/webapps/idp.xml
     exit
     cd $HOME</code></pre>
 <p>Now we can restart jetty and test our setup.</p>
 <pre class="shell"><code>   sudo systemctl restart jetty9
    sudo systemctl status jetty9
-   # NOTE: You need to way a while, Jetty is slow to restart!!
+   # NOTE: You need to wait a while, Jetty is slow to restart!!
    lynx http://localhost:8080/idp/status</code></pre>
+<p>The status end point describes the IdP setup.</p>
+<p>FIXME: All the prose is broken here, I haven’t gotten the IdP to
+actually use the htpasswd file correctly and the admin user setup for
+Hello world returns 500 errors.</p>
+<h3 id="next-two-steps">Next two steps</h3>
+<p>As stated in <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631515/Configuration">Configuration</a>
+the first step to bring up an IdP from scratch is to configure</p>
+<ol type="1">
+<li><a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631601">Authentication</a></li>
+<li><a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631549">Attribute
+Resolver</a></li>
+</ol>
+<p>Then we can move onto the <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553">Hello
+World</a> and see if things actually work.</p>
+<p>Configure authentication starts with loading the idp.authn.Password
+module.</p>
+<pre class="shell"><code>    # NOTE: we should be the root user and
+    # the working directory is assumed to be /opt/shibboleth-idp
+    # where we installed our IdP software.
+    bin/module.sh -t idp.authn.Password
+    bin/module.sh -e idp.authn.Password</code></pre>
+<p>Update <code>conf/authn/password-authn-config.xml</code> uncommenting
+the line with <code>shibboleth.HTPasswdValidator</code> and commenting
+out the line with <code>shibboleth.LDAPValidator</code> . We also need
+to create the “demo.htpasswd” file in the <code>credentials</code>
+directory.</p>
+<pre class="shell"><code>    vi conf/authn/password-authn-config.xml
+    htpasswd -c credentials/demo.htpasswd admin
+    chown jetty:adm credentials/demo.htpasswd
+    chmod 660 credentials/demo.htpasswd</code></pre>
+<p>FIXME: This isn’t enough to configure the authentication, haven’t
+even got to the Attribute Resolver yet!</p>
+<h3 id="setting-hello-world-to-test">Setting Hello World to test</h3>
+<p>I recommend enabling the “hello” or “hello world” module. Flows are
+the data paths take when a user authenticates via Shibboleth’s IdP. The
+“hello” module provides a way to see if the IdP is working without
+having a service provider implemented yet (see <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553/HelloWorldConfiguration">HelloWorldConfiguration</a>
+for details).</p>
+<p>Modules can be enable, disabled and tests. Shibboleth IdP 4 package
+provides a script for that. The <code>modules.sh</code> script is found
+in the <code>bin</code> folder. It has a <code>--help</code> option
+which explains how it can be used.</p>
+<p>While the status end point indicates the <code>idp.admin.Hello</code>
+module is enabled it doesn’t work out of the box. These are the step I
+took to get it working and confirm the IdP was working before going on
+to configure it.</p>
+<pre class="shell"><code>    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.admin.Hello
+    ./bin/module.sh -e idp.admin.Hello</code></pre>
+<p>FIXME: This is failing, status 500, probably because authentication
+module isn’t configured yet though there is some ambiguity in the
+docs</p>
+<p>If this works then we can test it.</p>
+<pre class="shell"><code>    lynx http://localhost:8080/idp/profile/admin/hello</code></pre>
+<p>If you get a 500 error then something isn’t working yet. It is
+probably something more that needs to be configured.</p>
+<h3
+id="configuring-populating-accounts-for-our-idp-service">Configuring,
+populating accounts for our IdP service</h3>
+<p>FIXME: This is a section that I describe how to to setup up
+additional non-admin accounts in the htpasswd file. …</p>
+<p>——– START CUT ——————– The is hinted at in two places of the
+Shibboleth confluence documentation site: <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631611/PasswordAuthnConfiguration">PasswordAuthentication</a>
+and <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1274544392/HTPasswdAuthnConfiguration">HTPasswdAuthnConfiguration</a>.
+The later actually shows an example of what needs to change in the
+“bean” element so the Java class and use the htpasswd file. Unfortunetly
+that is about all it shows. In the former page there is a mention of a
+<code>modules.sh</code> program to enable modules like Password base
+authentication. Fortunately that does respond to the
+<code>--help</code>. Based on that I know their example is first tests
+if the module is already enabled and stops or proceeds to enable it
+(we’ll also going to enable the “Hello World” flow to support
+testing).</p>
+<pre class="shell"><code>    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.authn.Password
+    ./bin/module.sh -e idp.authn.Password</code></pre>
+<p>In comment the
+<code>&lt;bean parent="shibboleth.HTPasswdValidator" p:resource="%{idp.home}/credentials/demo.htpasswd" /&gt;</code>
+and save the file.</p>
+<pre class="shell"><code>    vi conf/authn/password-authn-config.xml</code></pre>
+<p>You can create our <code>demo.htpasswd</code> file in
+<code>credentials/demo.htpasswd</code> using Apache
+<code>htpasswd</code> program. That file needs to be owned by
+<code>jetty.adm</code>.</p>
+<pre><code>   htpasswd -c credentials/demo.htpasswd testuser
+   chown jetty:adm credentials/demo.htpasswd
+   chmod 660 credentials/demo.htpasswd</code></pre>
+<p>The “views” or HTML pages supplied by Shibboleth are found in the
+“views” directory. At this point you should see ones for
+<code>login.vm</code> as well as other parts of the “flow” like
+<code>logout.vm</code> and <code>login-error.vm</code>.</p>
+<p>But, at least in my build the test does actually detact that is
+enabled. Run the command separately yields better results and ensure
+0that the login view have been created.</p>
+<p>Checking the <code>/idp/status</code> end point to make sure the IdP
+software is working, we can then try the</p>
 <p>If we see the Shibboleth IdP 4 status page we’re ready to proceed to
 setting up Apache 2 as a reverse proxy for our IdP.</p>
+<p>——– END CUT ———————-</p>
 <h2 id="configuring-apache-2">Configuring Apache 2</h2>
 <p>We use Apache2 to “reverse proxy” to our Jetty service. That takes
 some additional setup. Let’s create some content to know when things are
@@ -345,17 +440,19 @@ finally working.</p>
     exit</code></pre>
 <p>You’ll need your Apache 2 setup support SSL as well as reverse proxy.
 On Ubuntu the certificates should go in <code>/etc/ssl/certs</code> for
-the public key certific and <code>/etc/ssl/private</code> for the
-private key.</p>
+the public certificates (e.g. “.crt”, “.pem”) and
+<code>/etc/ssl/private</code> for the private key files
+(e.g. “.key”).</p>
 <p>Since your VM will likely NOT be on a public network I’ve included a
 Bash script that will create self signed certificates using openssl. The
 script is called <code>setup-self-signed-SSL-certs.bash</code> and can
 be found in either the GitHub repository under “scripts” directory at
 https://github.com/caltechlibrary/cloud-init-examples and should have
-been “tranfered” into your VM’s home directory if you created the VM
-using <code>start-vm.bash</code>. NOTE:
-<code>setup-self-signed-SSL-certs.bash</code> is interactive you’ll need
-to answer the questions posed by <code>openssl</code> as it prompts.</p>
+been “transfered” into your VM’s home directory if you created the VM
+using <code>start-vm.bash</code>.</p>
+<p>NOTE: <code>setup-self-signed-SSL-certs.bash</code> is interactive
+you’ll need to answer the questions posed by <code>openssl</code> as it
+prompts.</p>
 <pre class="shell"><code>    bash setup-self-signed-SSL-certs.bash</code></pre>
 <p>The script will create an “etc/ssl” directory tree in your home
 directory (e.g. /home/ubuntu). These should be copied to host machines
@@ -438,15 +535,9 @@ multipass instance.</p>
 different IP number remember to update your hosts’
 <code>/etc/hosts</code> to reflect the new IP number associated with
 <code>idp.example.edu</code>.</p>
-<p>NOTE: Chrome just will net let you access self signed or snake oil
-SSL certs used by our VM’s Apache. If you want to use Chrome for
-continue setup and development you’ll need to setup</p>
-<p>You can create valid certs (buy or figure out how to use let’s
-encrypt) or use a different web browser. I use Firefox and am able to
-click through the various warnings.</p>
-<h3 id="configuring-and-populating-out-idp-service">Configuring and
-populating out IdP service</h3>
-<p>Now for the second step, populating our IdP.</p>
+<p>NOTE: Chrome just will not let you access a website with self signed
+certs. This is true of your VM. I gave up trying to get this to work and
+just used Firefox which will warn you but let you proceed.</p>
 <p>FIXME: Need to document options and setting things up here.</p>
 <h2 id="wrapping-things-up">Wrapping things up</h2>
 <p>See <a href="Shib-IdP-References.html">Shibboleth IdP

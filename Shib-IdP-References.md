@@ -17,3 +17,9 @@ This is a collection of links that may be helpful if you're setting up a Shibbol
 - Example Shibboleth SP setups
     - [harvard](https://iam.harvard.edu/resources/saml-shibboleth-integration)
     - [USC](https://shibboleth.usc.edu/docs/sp/install/)
+
+# Configuring our IdP
+
+- https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631611/PasswordAuthnConfiguration
+- https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1274544392/HTPasswdAuthnConfiguration
+    - this documents using an Apache htpasswd type file
