@@ -24,7 +24,7 @@ groups:
   - www-data
 snap:
   commands:
-  - [ install, certbot ]
+  - [ install, --classic, certbot ]
 runcmd:
   - adduser ubuntu docker
   - adduser ubuntu staff
