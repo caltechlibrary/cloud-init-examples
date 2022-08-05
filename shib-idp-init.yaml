@@ -3,6 +3,7 @@ package_update: true
 package_upgrade: true
 fqdn: shib-idp.local
 packages:
+  - sshfs
   - build-essential
   - git
   - autoconf

@@ -2,4 +2,5 @@
 package_update: true
 package_upgrade: true
 packages:
+  - sshfs
   - build-essential

@@ -3,6 +3,7 @@ package_update: true
 package_upgrade: true
 fqdn: caltechdata.local
 packages:
+  - sshfs
   - build-essential
   - git
   - snapcraft
