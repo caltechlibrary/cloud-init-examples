@@ -4,3 +4,7 @@ package_upgrade: true
 packages:
   - sshfs
   - build-essential
+  - pkg-config
+  - autotools
+  - autoconf
+  - automake

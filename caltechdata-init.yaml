@@ -15,6 +15,7 @@ packages:
   - rsync
   - nginx 
   - imagemagick
+  - pkg-config
   - libxml2-dev
   - libxmlsec1-dev
   - docker.io
