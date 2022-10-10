@@ -9,3 +9,5 @@ packages:
   - autoconf
   - automake
   - makepasswd
+  - shfmt
+  - shellcheck

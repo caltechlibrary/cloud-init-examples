@@ -21,3 +21,5 @@ packages:
   - liblogback-java
   - jetty9
   - makepasswd
+  - shfmt
+  - shellcheck
