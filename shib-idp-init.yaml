@@ -20,3 +20,4 @@ packages:
   - libservlet3.1-java
   - liblogback-java
   - jetty9
+  - makepasswd

@@ -7,19 +7,20 @@ packages:
   - build-essential
   - git
   - snapcraft
-  - curl 
+  - curl
   - python2
   - python3-dev
   - python-is-python3
   - python3-pip
   - rsync
-  - nginx 
+  - nginx
   - imagemagick
   - pkg-config
   - libxml2-dev
   - libxmlsec1-dev
   - docker.io
   - docker-compose
+  - makepasswd
 groups:
   - docker
   - staff

@@ -9,7 +9,7 @@ packages:
   - snapcraft
   - autoconf
   - automake
-  - curl 
+  - curl
   - wget
   - tmux
   - tree
@@ -25,7 +25,8 @@ packages:
   - apache2
   - apache2-utils
   - ssl-cert
-  - libapache2-mod-wsgi 
+  - libapache2-mod-wsgi
+  - makepasswd
 groups:
   - docker
   - staff
