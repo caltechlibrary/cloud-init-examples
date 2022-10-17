@@ -9,5 +9,4 @@ packages:
   - python3-pip
   - pkg-config
   - makepasswd
-  - shfmt
   - shellcheck

@@ -21,7 +21,6 @@ packages:
   - docker.io
   - docker-compose
   - makepasswd
-  - shfmt
   - shellcheck
 groups:
   - docker

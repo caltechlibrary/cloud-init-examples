@@ -27,7 +27,6 @@ packages:
   - ssl-cert
   - libapache2-mod-wsgi
   - makepasswd
-  - shfmt
   - shellcheck
 groups:
   - docker

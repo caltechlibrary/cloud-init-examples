@@ -28,7 +28,6 @@ packages:
   - ubuntu-desktop
   - xrdp
   - makepasswd
-  - shfmt
   - shellcheck
 groups:
   - docker
