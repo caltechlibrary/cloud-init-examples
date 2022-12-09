@@ -10,7 +10,7 @@ NAME
 
 USAGE
 
-   $APP_NAME MACHINE_NAME [MACHINE_SIZE]
+   $APP_NAME MACHINE_NAME [MACHINE_SIZE] [UBUNTU_VERSION]
 
 SYNOPSIS
 
@@ -26,12 +26,18 @@ xlarge and 2xlarge.  The CPU count and memory settings
 see https://aws.amazon.com/ec2/instance-types/ or read
 the source file for $APP_NAME.
 
+IMAGE
+
+A specific image we'll be using. The current use case is to 
+indicate a specific version of ubuntu.
+
 EXAMPLE
 
 In this example we'll start an machine name "invenio" and
-if it does not exist it will be created with a size of xlarge.
+if it does not exist it will be created with a size of xlarge utilizing ubuntu
+20.04 (foacl).
 
-    $APP_NAME invenio xlarge
+    $APP_NAME invenio xlarge focal
 
 EOT
 }
@@ -92,6 +98,11 @@ else
 fi
 
 #
+#Third cli option is what image we're using
+#
+IMAGE="$3"
+
+#
 # Figure out if we're launching, starting or machine is already active
 #
 if multipass list | grep $MACHINE >/dev/null; then
@@ -113,7 +124,7 @@ else
         CLOUD_INIT="$MACHINE-init.yaml"
     fi
     echo "Launching $MACHINE";
-    multipass launch --name $MACHINE \
+    multipass launch $IMAGE --name $MACHINE \
         $MACHINE_SIZE \
         --cloud-init $CLOUD_INIT
     multipass restart "${MACHINE}"

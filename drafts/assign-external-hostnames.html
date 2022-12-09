@@ -27,31 +27,19 @@
 </nav>
 
 <section>
-<h2 id="setting-up-external-hostnames">Setting up external
-hostnames</h2>
-<p>There are times when it would be convient to refer to your VM with an
-external hostname during development. That can be done by configuring it
-in the VM as well as on the host system.</p>
+<h2 id="setting-up-external-hostnames">Setting up external hostnames</h2>
+<p>There are times when it would be convient to refer to your VM with an external hostname during development. That can be done by configuring it in the VM as well as on the host system.</p>
 <h2 id="vm-hostname-setup">VM Hostname setup</h2>
-<p>You can setup your multipass instance to use an external host name.
-This can be done in these steps.</p>
+<p>You can setup your multipass instance to use an external host name. This can be done in these steps.</p>
 <ol type="1">
 <li>Get the IP address the VM is running under</li>
-<li>Define the new IP address/name relationship in
-<code>/etc/hosts</code></li>
+<li>Define the new IP address/name relationship in <code>/etc/hosts</code></li>
 <li>Use <code>hostnamectl</code> to update the VM’s hostname</li>
 </ol>
-<p>In the example blow the VM name is called
-<code>minimal-dev</code>.</p>
-<p>To get the VM’s IP address you can run <code>multipass info</code>
-command. For the a machine called <code>minimal-dev</code> run</p>
+<p>In the example blow the VM name is called <code>minimal-dev</code>.</p>
+<p>To get the VM’s IP address you can run <code>multipass info</code> command. For the a machine called <code>minimal-dev</code> run</p>
 <pre class="shell"><code>    multipass info minimal-dev</code></pre>
-<p>On my system it reported the IP address 192.168.64.166. I want my VM
-to be visible from the host system as minimal-dev.example.edu. I now
-using the <code>multipass shell</code> command to access my VM then
-follow these steps. I will add a line to my <code>/etc/hosts</code> file
-on the VM for minimal-dev.example.edu using the vi text editor. The
-added lines should look like</p>
+<p>On my system it reported the IP address 192.168.64.166. I want my VM to be visible from the host system as minimal-dev.example.edu. I now using the <code>multipass shell</code> command to access my VM then follow these steps. I will add a line to my <code>/etc/hosts</code> file on the VM for minimal-dev.example.edu using the vi text editor. The added lines should look like</p>
 <pre><code># minimal-dev.example.edu IP mapping
 192.168.64.166 minimal-dev.example.edu</code></pre>
 <p>The commands to add this are</p>
@@ -60,15 +48,10 @@ added lines should look like</p>
 <p>You can then check the setup with</p>
 <pre class="shell"><code>    hostname -f
     hostname -i</code></pre>
-<p>This should report the fully qualified hostname and IP associated
-with it.</p>
+<p>This should report the fully qualified hostname and IP associated with it.</p>
 <h2 id="host-system-setup">Host system setup</h2>
-<p>On your host Unix-like system you can usually modify the
-<code>/etc/hosts</code> to include the same lines added in the VM’s
-<code>/etc/hosts</code> file.</p>
-<p>If all’s gone well you should be to run the following command
-successfully (my example the hostname is called
-<code>minimal-dev.example.edu</code>)</p>
+<p>On your host Unix-like system you can usually modify the <code>/etc/hosts</code> to include the same lines added in the VM’s <code>/etc/hosts</code> file.</p>
+<p>If all’s gone well you should be to run the following command successfully (my example the hostname is called <code>minimal-dev.example.edu</code>)</p>
 <pre class="shell"><code>    host minimal-dev.example.edu</code></pre>
 </section>
 

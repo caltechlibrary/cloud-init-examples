@@ -22,7 +22,7 @@ VM Setup Recipe
 Here are a summary of the steps. The full commands can be found below.
 1. Clone the cloud-init-examples repository
 2. change to that directory
-3. Use `start-vm.bash invenio-rdm xlarge` to create the VM and start it the first time
+3. Use `start-vm.bash invenio-rdm xlarge focal` to create the VM and start it the first time
 4. Add a password for the user you're going to log in with, e.g. ubuntu user
 5. Install `nvm`, the node version manager
 6. Before you reboot, make sure xrdp and ubuntu-desktop are installed and updated
