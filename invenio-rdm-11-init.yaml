@@ -2,12 +2,11 @@
 package_update: true
 package_upgrade: true
 fqdn: invenio-rdm.local
-autoinstall:
-  apt:
-    preserve_sources_list: false
-    sources:
-      deadsnakes-ppa:
-        source: ppa:deadsnakes/ppa
+apt:
+  preserve_sources_list: false
+  sources:
+    deadsnakes-ppa:
+      source: ppa:deadsnakes/ppa
 packages:
   - sshfs
   - build-essential
