@@ -71,6 +71,10 @@ package_upgrade: true
 # package version will be installed.
 packages:
   - aptitude
+  - tmux
+  - micro
+  - vim
+  - emacs
   - build-essential
   - autotools-dev
   - autoconf
