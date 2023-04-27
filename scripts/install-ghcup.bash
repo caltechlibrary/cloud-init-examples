@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
+export BOOTSTRAP_HASKELL_GHC_VERSION=latest
+export BOOTSTRAP_HASKELL_CABAL_VERSION=latest
+export BOOTSTRAP_HASKELL_INSTALL_STACK=1
+export BOOTSTRAP_HASKELL_INSTALL_HLS=1
+export BOOTSTRAP_HASKELL_ADJUST_BASHRC=P 
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh 
+

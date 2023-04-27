@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function usage () {
-    APP_NAME=$(basename $0)
+    APP_NAME=$(basename "$0")
     cat <<EOT
 
 NAME
@@ -34,8 +34,8 @@ indicate a specific version of ubuntu.
 EXAMPLE
 
 In this example we'll start an machine name "invenio" and
-if it does not exist it will be created with a size of xlarge utilizing ubuntu
-20.04 (foacl).
+if it does not exist it will be created with a size of xlarge
+utilizing ubuntu 20.04 (focal).
 
     $APP_NAME invenio xlarge focal
 
@@ -70,29 +70,29 @@ fi
 # See https://aws.amazon.com/ec2/instance-types/
 #
 if [ "$2" = "" ]; then
-    MACHINE_SIZE="--cpus 2 --mem 8G --disk 50G"
+    MACHINE_SIZE="--cpus 2 --memory 8G --disk 50G"
 else
     case "$2" in
         nano)
-        MACHINE_SIZE="--cpus 2 --mem 512M --disk 50G"
+        MACHINE_SIZE="--cpus 2 --memory 512M --disk 50G"
         ;;
         micro)
-        MACHINE_SIZE="--cpus 2 --mem 1G --disk 50G"
+        MACHINE_SIZE="--cpus 2 --memory 1G --disk 50G"
         ;;
         small)
-        MACHINE_SIZE="--cpus 2 --mem 2G --disk 50G"
+        MACHINE_SIZE="--cpus 2 --memory 2G --disk 50G"
         ;;
         medium)
-        MACHINE_SIZE="--cpus 2 --mem 4G --disk 50G"
+        MACHINE_SIZE="--cpus 2 --memory 4G --disk 50G"
         ;;
         large)
-        MACHINE_SIZE="--cpus 2 --mem 8G --disk 50G"
+        MACHINE_SIZE="--cpus 2 --memory 8G --disk 50G"
         ;;
         xlarge)
-        MACHINE_SIZE="--cpus 4 --mem 16G --disk 100G"
+        MACHINE_SIZE="--cpus 4 --memory 16G --disk 100G"
         ;;
         2xlarge)
-        MACHINE_SIZE="--cpus 8 --mem 32G --disk 150G"
+        MACHINE_SIZE="--cpus 8 --memory 32G --disk 150G"
         ;;
     esac
 fi
@@ -100,16 +100,20 @@ fi
 #
 #Third cli option is what image we're using
 #
-IMAGE="$3"
+if [ "$3" != "" ]; then
+	IMAGE="$3"
+else
+	IMAGE="jammy"
+fi
 
 #
 # Figure out if we're launching, starting or machine is already active
 #
-if multipass list | grep $MACHINE >/dev/null; then
-    VM_STATE=$(multipass info $MACHINE | grep -i State)
+if multipass list | grep "$MACHINE" >/dev/null; then
+    VM_STATE=$(multipass info "$MACHINE" | grep -i State)
     case "${VM_STATE}" in
         *Stopped)
-        multipass start $MACHINE
+        multipass start "$MACHINE"
         ;;
         *Running)
         echo "$MACHINE is already running"
@@ -124,37 +128,40 @@ else
         CLOUD_INIT="$MACHINE-init.yaml"
     fi
     echo "Launching $MACHINE";
-    multipass launch $IMAGE --name $MACHINE \
-        $MACHINE_SIZE \
-        --cloud-init $CLOUD_INIT
+    multipass -v launch \
+		--name "${MACHINE}" \
+        --cloud-init "${CLOUD_INIT}" \
+		$MACHINE_SIZE \
+		$IMAGE
+	echo "Restart ${MACHINE}"
     multipass restart "${MACHINE}"
 fi
 
 #
 # If a src directory exists mount it
 #
-if [ -d src ]; then
-  multipass mount src $MACHINE:src
-fi
+#if [ -d src ]; then
+#  multipass mount src "$MACHINE:src"
+#fi
 
 #
 # If a Sites directory exists mount it
 #
-if [ -d Sites ]; then
-  multipass mount Sites $MACHINE:Sites
-fi
+#if [ -d Sites ]; then
+#  multipass mount Sites "$MACHINE:Sites"
+#fi
 
 #
 # Include staff-favorites.bash if exists
 #
 if [ -f scripts/staff-favorites.bash ]; then
-  multipass transfer scripts/staff-favorites.bash $MACHINE:.
+  multipass transfer scripts/staff-favorites.bash "$MACHINE:."
 fi
-if [ -f scripts/setup-self-signed-SSL-certs.bash ]; then
-  multipass transfer scripts/setup-self-signed-SSL-certs.bash $MACHINE:.
-fi
+#if [ -f scripts/setup-self-signed-SSL-certs.bash ]; then
+#  multipass transfer scripts/setup-self-signed-SSL-certs.bash "$MACHINE:."
+#fi
 
 # 
 # Display state of machine
 #
-multipass info $MACHINE
+multipass info "$MACHINE"

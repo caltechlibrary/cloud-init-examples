@@ -5,5 +5,6 @@
 # optimization including, e.g. emacs, tcsh.
 #
 sudo apt install vim
+sudo apt install micro
 sudo apt install emacs
 sudo apt install tcsh
