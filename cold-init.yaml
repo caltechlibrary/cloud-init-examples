@@ -75,6 +75,7 @@ packages:
   - micro
   - vim
   - emacs
+  - tcsh
   - build-essential
   - autotools-dev
   - autoconf
