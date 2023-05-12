@@ -28,36 +28,87 @@
 
 <section>
 <h1 id="cloud-init-examples">cloud-init-examples</h1>
-<p>This repository includes some example of cloud-init YAML files for use with <a href="https://multipass.run" title="Multipass website">multipass</a> in creating some virtual machines.</p>
+<p>This repository includes some example of cloud-init YAML files for
+use with <a href="https://multipass.run"
+title="Multipass website">multipass</a> in creating some virtual
+machines.</p>
 <h2 id="examples">Examples</h2>
-<p>Included in this repository is a set of Bash script for starting, stoping and stats on a multipass VMs. These scripts are used in conjunction with a set of cloud init YAML files that describe a machine. The files are named in the form of MACHINE_NAME dash “-init.yaml”. You can create a copy of the <code>*-init.yaml</code> files named <code>*-local.yaml</code> and that will be used instead for a given machine name. In addition the startup Bash script, <code>start-vm.bash</code> accepts a machine “size” based on the the suffix part of the AWS EC2 machine names (e.g. t4g.nano suffix is “nano”). You can include this the first time you startup a machine to create a similarly size VM.</p>
+<p>Included in this repository is a set of Bash script for starting,
+stoping and stats on a multipass VMs. These scripts are used in
+conjunction with a set of cloud init YAML files that describe a machine.
+The files are named in the form of MACHINE_NAME dash “-init.yaml”. You
+can create a copy of the <code>*-init.yaml</code> files named
+<code>*-local.yaml</code> and that will be used instead for a given
+machine name. In addition the startup Bash script,
+<code>start-vm.bash</code> accepts a machine “size” based on the the
+suffix part of the AWS EC2 machine names (e.g. t4g.nano suffix is
+“nano”). You can include this the first time you startup a machine to
+create a similarly size VM.</p>
 <dl>
 <dt><code>start-vm.bash minimal-dev nano</code></dt>
-<dd>This is a minimal cloud init YAML just a demo of a configuration, it includes the Debian build-essentials package. It is roughly the spec of an AWS EC2 T4g.nano
+<dd>
+This is a minimal cloud init YAML just a demo of a configuration, it
+includes the Debian build-essentials package. It is roughly the spec of
+an AWS EC2 T4g.nano
 </dd>
 <dt><code>start-vm.bash minimal-py small</code></dt>
-<dd>This starts a “small” minimal Python 3 development machine. It is roughly the space of an AWS EC2 T4g.small
+<dd>
+This starts a “small” minimal Python 3 development machine. It is
+roughly the space of an AWS EC2 T4g.small
 </dd>
 <dt><code>start-vm.bash invenio 2xlarge</code></dt>
-<dd>This will create a machine configured to run Invenio RDM about the size of an EC2 T4g.xlarge instance
+<dd>
+This will create a machine configured to run Invenio RDM about the size
+of an EC2 T4g.xlarge instance
 </dd>
 <dt><code>start-vm.bash dev-server medium</code></dt>
-<dd>This is a server like development environment for Golang 1.18. This example creates a T4g.medium sized instance.
+<dd>
+This is a server like development environment for Golang 1.18. This
+example creates a T4g.medium sized instance.
 </dd>
 </dl>
-<p>The next set provide the ability to run as a full GUI environment on macOS or Windows using the Microsoft Remote Desktop viewer or Remmina on Linux. The are based on the previous terminal oriented VMs but add the “ubuntu-desktop” and “xrdp” package to handle the remote displays. For you to use the GUI versions your VM accounts need to have a password associated with them. You can use the <code>multipass shell</code> command to get a shell and then use <code>sudo passwd USERNAME</code> to set the password for “USERNAME” (e.g. ubuntu, rsdoiel).</p>
+<p>The next set provide the ability to run as a full GUI environment on
+macOS or Windows using the Microsoft Remote Desktop viewer or Remmina on
+Linux. The are based on the previous terminal oriented VMs but add the
+“ubuntu-desktop” and “xrdp” package to handle the remote displays. For
+you to use the GUI versions your VM accounts need to have a password
+associated with them. You can use the <code>multipass shell</code>
+command to get a shell and then use <code>sudo passwd USERNAME</code> to
+set the password for “USERNAME” (e.g. ubuntu, rsdoiel).</p>
 <dl>
 <dt><code>start-vm.bash dev-gui large</code></dt>
-<dd>This will start a development virtual machine with the Ubuntu Desktop installed using the size similar to an AWS EC2 T4g.large instance.
+<dd>
+This will start a development virtual machine with the Ubuntu Desktop
+installed using the size similar to an AWS EC2 T4g.large instance.
 </dd>
 </dl>
-<p>The sizes recognized by <code>start-vm.bash</code> are nano, micro, tiny, small, medium, large, xlarge, 2xlarge. See https://aws.amazon.com/ec2/instance-types/t4 for the descriptions used to model these sizes. Look in the T4g section of the table</p>
+<p>The sizes recognized by <code>start-vm.bash</code> are nano, micro,
+tiny, small, medium, large, xlarge, 2xlarge. See
+https://aws.amazon.com/ec2/instance-types/t4 for the descriptions used
+to model these sizes. Look in the T4g section of the table</p>
 <h2 id="multipass">Multipass</h2>
-<p><a href="https://multipass.run" title="Multipass website">Mulitpass</a> is a tool for running and managing Ubuntu VMs. It is lighter weight then running VirtualBox, works across operating systems (e.g. Windows, macOS, Linux) and processor types (e.g. Intel an ARM). This means you can easily run VMs on Raspberry Pi or your favor macOS or Windows machine. The VM will match your host CPU architecture (i.e. you’re not running full emulation but using running as a Intel box on an Intel host or a ARM box on a Raspberry Pi or M1 Mac). VM’s can be easily create, started, stopped and destroy. The setup script is YAML rather than Ruby like with vagrant. There are a small number of commands to learn (i.e. <code>multipass --help</code> covers them all). Multipass is NOT as featureful as VirtualBox or Parallels but it does seem to be much lighter weight and the things you can adjust (e.g. RAM, CPU cores) are the ones you likely want to adjust anyway. It is focused on easily bringing up a server like environment for testing and development.</p>
+<p><a href="https://multipass.run"
+title="Multipass website">Mulitpass</a> is a tool for running and
+managing Ubuntu VMs. It is lighter weight then running VirtualBox, works
+across operating systems (e.g. Windows, macOS, Linux) and processor
+types (e.g. Intel an ARM). This means you can easily run VMs on
+Raspberry Pi or your favor macOS or Windows machine. The VM will match
+your host CPU architecture (i.e. you’re not running full emulation but
+using running as a Intel box on an Intel host or a ARM box on a
+Raspberry Pi or M1 Mac). VM’s can be easily create, started, stopped and
+destroy. The setup script is YAML rather than Ruby like with vagrant.
+There are a small number of commands to learn
+(i.e. <code>multipass --help</code> covers them all). Multipass is NOT
+as featureful as VirtualBox or Parallels but it does seem to be much
+lighter weight and the things you can adjust (e.g. RAM, CPU cores) are
+the ones you likely want to adjust anyway. It is focused on easily
+bringing up a server like environment for testing and development.</p>
 <h2 id="common-multipass-commands">Common multipass commands</h2>
 <p>Get a list of VMs available</p>
 <pre class="shell"><code>    multipass list</code></pre>
-<p>Set a VM as primary (e.g. a machine named “dev-server”) so you don’t have to provide a name with each command. If you want to access a non-primary VM then give it a name and pass the name in the command.</p>
+<p>Set a VM as primary (e.g. a machine named “dev-server”) so you don’t
+have to provide a name with each command. If you want to access a
+non-primary VM then give it a name and pass the name in the command.</p>
 <pre class="shell"><code>    multipass set client.primary-name=dev-server</code></pre>
 <p>Access the primary VM</p>
 <pre class="shell"><code>    multipass shell</code></pre>
@@ -76,37 +127,75 @@
 <p>Move a file (e.g. staff-favorites.absh) to the “dev-server” VM</p>
 <pre><code>   multipass transfer staff-favorites.bash dev-server:.</code></pre>
 <h2 id="cloud-init-files">Cloud Init Files</h2>
-<p><a href="https://cloud-init.io">Cloud Init</a> is a specification for bringing up a virtual machine (or container) using a YAML syntax. It can be relatively simple (see the minimal example) to elaborate (the dev example). You can specify things like users, packages to be installed, host files to be mounted or even shell scripts to run.</p>
+<p><a href="https://cloud-init.io">Cloud Init</a> is a specification for
+bringing up a virtual machine (or container) using a YAML syntax. It can
+be relatively simple (see the minimal example) to elaborate (the dev
+example). You can specify things like users, packages to be installed,
+host files to be mounted or even shell scripts to run.</p>
 <h2 id="minimal-py">Minimal Py</h2>
-<p>The <code>start-vm.bash minimal-py small</code> scripts creates a minimal python development box described in minimal-py-init.yaml. It doens’t create users or install more than python3 and pip.</p>
+<p>The <code>start-vm.bash minimal-py small</code> scripts creates a
+minimal python development box described in minimal-py-init.yaml. It
+doens’t create users or install more than python3 and pip.</p>
 <h2 id="the-dev-vm">The Dev VM</h2>
-<p>This will create a VM named “dev-server”. It includes a more complete server development environment including support for Go version 1.18.x. It includes examples of installing packages via apt and snaps.</p>
+<p>This will create a VM named “dev-server”. It includes a more complete
+server development environment including support for Go version 1.18.x.
+It includes examples of installing packages via apt and snaps.</p>
 <pre class="shell"><code>    start-vm.bash dev-server small</code></pre>
 <p>Access VM as Ubuntu user.</p>
 <pre class="shell"><code>    multipass shell</code></pre>
 <p>You can also access via SSH using the IP addressed assigned.</p>
 <p>The YAML file is dev-server-init.yaml.</p>
 <h2 id="the-inveniordm-vm">The InvenioRDM VM</h2>
-<p>The InvenioRDM VM is similar to the dev VM except it installes a more limited number of dev packages and those required for InvenioRDM, such as imagemagick.</p>
-<pre class="shell"><code>    start-vm.bash invenio 2xlarge focal</code></pre>
-<p>Like previous example access with the <code>multipass</code> shell command.</p>
+<p>The InvenioRDM VM is similar to the dev VM except it installes a more
+limited number of dev packages and those required for InvenioRDM, such
+as imagemagick.</p>
+<pre class="shell"><code>    start-vm.bash invenio-rdm 2xlarge focal</code></pre>
+<p>Like previous example access with the <code>multipass</code> shell
+command.</p>
 <pre class="shell"><code>    multipass shell</code></pre>
-<p>A more complete exploration of running InvenioRDM is found in the <a href="https://caltechlibrary.github.io/cloud-init-examples/InvenioRDM-setup.html">InvenioRDM-setup</a></p>
+<p>A more complete exploration of running InvenioRDM is found in the <a
+href="https://caltechlibrary.github.io/cloud-init-examples/InvenioRDM-setup.html">InvenioRDM-setup</a></p>
 <h2 id="general-purpose-bash-scripts">General purpose Bash scripts</h2>
-<p>I have provided three Bash scripts for starting/launching, getting info and stopping your multipass VM.</p>
+<p>I have provided three Bash scripts for starting/launching, getting
+info and stopping your multipass VM.</p>
 <ol type="1">
-<li>start-vm.bash - starts an existing or launches a new virtual machine based on a related cloud init YAML file. If you’re creating the machine pass a zie of nano, micro, small, medium, large, xlarge, or 2xlarge to create a machine with a similar profile to the AWS EC2 T4g sizes, see https://aws.amazon.com/ec2/instance-types/t4/</li>
-<li>stats-vm.bash - will return information about the machine (i.e. it runs <code>multipass info $MACHINE</code>)</li>
+<li>start-vm.bash - starts an existing or launches a new virtual machine
+based on a related cloud init YAML file. If you’re creating the machine
+pass a zie of nano, micro, small, medium, large, xlarge, or 2xlarge to
+create a machine with a similar profile to the AWS EC2 T4g sizes, see
+https://aws.amazon.com/ec2/instance-types/t4/</li>
+<li>stats-vm.bash - will return information about the machine (i.e. it
+runs <code>multipass info $MACHINE</code>)</li>
 <li>stop-vm-.bash - will stop the machine</li>
 <li>remove-vm.bash - will delete and purge a machine</li>
 </ol>
-<p>If you’ve defined a primary name for the machine the Bash scripts can be used without any additoinal parameters. If you provide a machine name as a parameter then the scripts will work with that machine name.</p>
-<p>For creating new machines (aka multipass launch) the start-vm.bash script looks for a cloud init YAML file that defines the new machine. By default it first looks for the name <code>$MACHINE-local.yaml</code> and if that is not available it looks for <code>$MACHINE-init.yaml</code>. The <code>*-init.yaml</code> files provided in this repository are a good starting point but the cloud init support in multipass goes much further. The YAML file called <code>dev-server-local.yaml</code> is provided as an example of including full login setup for the developers in the DLD group of Caltech Library. This includes setting them up with sudo access, assigning them to additoinal groups and enabling login via SSH keys hosted on GitHub. By using the filename convension of <code>*-init.yaml</code> I can provide a general purpose machine definition while allowing for local modification via a version of the same file matching <code>*-local.yaml</code>.</p>
+<p>If you’ve defined a primary name for the machine the Bash scripts can
+be used without any additoinal parameters. If you provide a machine name
+as a parameter then the scripts will work with that machine name.</p>
+<p>For creating new machines (aka multipass launch) the start-vm.bash
+script looks for a cloud init YAML file that defines the new machine. By
+default it first looks for the name <code>$MACHINE-local.yaml</code> and
+if that is not available it looks for <code>$MACHINE-init.yaml</code>.
+The <code>*-init.yaml</code> files provided in this repository are a
+good starting point but the cloud init support in multipass goes much
+further. The YAML file called <code>dev-server-local.yaml</code> is
+provided as an example of including full login setup for the developers
+in the DLD group of Caltech Library. This includes setting them up with
+sudo access, assigning them to additoinal groups and enabling login via
+SSH keys hosted on GitHub. By using the filename convension of
+<code>*-init.yaml</code> I can provide a general purpose machine
+definition while allowing for local modification via a version of the
+same file matching <code>*-local.yaml</code>.</p>
 <h2 id="trouble-shooting">Trouble shooting</h2>
-<p>On a Mac, you may not be able to mount local directories until you enable Full Disk Access for multipassd in Settings -&gt; Security &amp; Privacy -&gt; Privacy.</p>
-<p>I’ve run into some challenges on the M1 Mac as well as when using Cisco’s VPN. Here’s some helpful links to explore.</p>
+<p>On a Mac, you may not be able to mount local directories until you
+enable Full Disk Access for multipassd in Settings -&gt; Security &amp;
+Privacy -&gt; Privacy.</p>
+<p>I’ve run into some challenges on the M1 Mac as well as when using
+Cisco’s VPN. Here’s some helpful links to explore.</p>
 <ul>
-<li><a href="https://multipass.run/docs/troubleshooting-networking-on-macos">Trouble shooting networking errors on macOS</a></li>
+<li><a
+href="https://multipass.run/docs/troubleshooting-networking-on-macos">Trouble
+shooting networking errors on macOS</a></li>
 </ul>
 <h2 id="where-to-go-from-here">Where to go from here</h2>
 <p>We’ve create a few recipes you may find useful.</p>

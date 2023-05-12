@@ -1,9 +1,10 @@
 {
     "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
     "@type": "SoftwareSourceCode",
-    "license": "https://spdx.org/licenses/BSD-3-Clause",
+    "license": "https://data.caltech.edu/license",
     "codeRepository": "https://github.com/caltechlibrary/cloud-init-examples",
     "dateCreated": "2022-04-25",
+	"dateUpdated": "2023-05-12",
     "issueTracker": "https://github.com/caltechlibrary/cloud-init-examples/issues",
     "name": "cloud-init-examples",
     "version": "0.0.6",
