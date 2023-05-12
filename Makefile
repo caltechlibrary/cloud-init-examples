@@ -13,10 +13,12 @@ MARKDOWN_PAGES =$(shell ls -1 *.md drafts/*.md | sed -E 's/\.md//g')
 
 HTML_PAGES = $(shell ls -1 *.md | sed -E 's/\.md/.html/g')
 
-build: CITATION.cff about.md $(HTML_PAGES) index.html license.html
+build: CITATION.cff about.md $(HTML_PAGES) index.html about.html
 
 CITATION.cff: codemeta.json
 	codemeta2cff
+
+about.html: about.md
 
 about.md: codemeta.json .FORCE
 	cat codemeta.json | sed -E 's/"@context"/"at__context"/g;s/"@type"/"at__type"/g;s/"@id"/"at__id"/g' >_codemeta.json
@@ -25,11 +27,6 @@ about.md: codemeta.json .FORCE
 
 index.html: README.md $(MARKDOWN_PAGES)
 	mv README.html index.html
-
-license.html: LICENSE
-	pandoc -f markdown -s --metadata title:"License" \
-		--template page.tmpl \
-		LICENSE >license.html
 
 $(HTML_PAGES): $(MARKDOWN_PAGES)
 
