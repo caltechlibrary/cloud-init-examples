@@ -3,11 +3,13 @@ package_update: true
 package_upgrade: true
 fqdn: shib-idp.local
 packages:
+  - sshfs
   - build-essential
   - git
   - autoconf
   - automake
-  - curl 
+  - curl
+  - lynx
   - unzip
   - tmux
   - tree
@@ -18,5 +20,5 @@ packages:
   - libservlet3.1-java
   - liblogback-java
   - jetty9
-
-
+  - makepasswd
+  - shellcheck

@@ -1,5 +1,6 @@
 *~
 *.tmp
+*.swp
 src/*
 Sites/*
 .DS_Store

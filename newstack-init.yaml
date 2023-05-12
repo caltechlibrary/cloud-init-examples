@@ -1,0 +1,125 @@
+#cloud-config
+#
+# Newstack-init.yaml provides a development environemt for building
+# web applications based on PostgreSQL 15, PostgREST 11, Pandoc 3,
+# and using Python 3's http.server to emulate a front end web server.
+#
+# This cloud init target Ubuntu's Multipass and assume the image
+# available is Jammy (22.04 LTS). Here's an example creating a VM
+# with Multipass call "newstack" and accessing it via Multipass's
+# shell.
+#
+# ~~~
+# multipass launch --name newstack --cloud-init newstack-init.yaml
+# ~~~
+#
+# When you're done you can stop the VM with
+#
+# ~~~
+# multipass stop newstack
+# ~~~
+#
+# You can remove newstack completely with
+#
+# ~~~
+# multipass stop newstack
+# multipass purge newstack
+# ~~~
+#
+# The first time you run your VM you will need to run the following
+# additional setup bash scripts to install Haskell (GHCup) so you can
+# compile the latest Pandoc and PostgREST.
+#
+# 1. setup-home-bin.bash, create "$HOME/bin" and adds it to your .bashrc
+# 2. gchup-install.bash, installs Haskell via GHCup
+# 3. pandoc-build.bash, builds Pandoc from source using cabal
+# 4. postgrest-build.bash, builds PostgREST from source using stack
+#
+write_files:
+  - content: |
+      #!/bin/bash
+      mkdir -p $HOME/bin
+      echo 'export PATH="$HOME/bin:$PATH"' >>"${HOME}/.bashrc"
+      cat <<EOT
+
+      You have added ${HOME}/bin to the PATH in your .bashrc
+      file. To update the path without logging out and in
+      do
+      
+              source $HOME/.bashrc
+      
+      EOT
+    path: /usr/local/sbin/setup-home-bin.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
+      export BOOTSTRAP_HASKELL_GHC_VERSION=recommended
+      export BOOTSTRAP_HASKELL_CABAL_VERSION=recommended
+      export BOOTSTRAP_HASKELL_INSTALL_STACK=1
+      export BOOTSTRAP_HASKELL_INSTALL_HLS=1
+      export BOOTSTRAP_HASKELL_ADJUST_BASHRC=P 
+      curl --proto '=https' --tlsv1.2 \
+           -sSf https://get-ghcup.haskell.org | sh
+    path: /usr/local/sbin/ghcup-install.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      PATH=$HOME/.ghcup/bin:$PATH
+      export PATH
+      cd
+      git clone https://github.com/jgm/pandoc src/pandoc
+      cd src/pandoc
+      make
+      cp -v $(find . -type f -name pandoc) "${HOME}/bin"
+      cp -v $(find . -type f -name pandoc) "${HOME}/bin/pandoc-server"
+    path: /usr/local/sbin/pandoc-build.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      cd
+      git clone https://github.com/PostgREST/postgrest src/postgrest
+      cd src/postgres 
+      stack build --install-ghc --copy-bins --local-bin-path $HOME/bin
+      cd
+    path: /usr/local/sbin/postgrest-build.bash
+    owner: root:root
+    permissions: '0775'
+package_upgrade: true
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, then package_update will be set to true
+#
+# packages may be supplied as a single package name or as a list
+# with the format [<package>, <version>] wherein the specific
+# package version will be installed.
+packages:
+  - ubuntu-desktop
+  - aptitude
+  - tmux
+  - micro
+  - vim
+  - emacs
+  - tcsh
+  - build-essential
+  - autotools-dev
+  - autoconf
+  - automake
+  - git
+  - curl
+  - make
+  - pkg-config
+  - postgresql
+  - pgloader
+  - pgtop
+  - libncurses-dev
+  - libffi-dev
+  - libgmp-dev
+  - libncurses5
+  - zlib1g-dev
+  - shellcheck

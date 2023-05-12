@@ -120,10 +120,11 @@ The YAML file is dev-server-init.yaml.
 The InvenioRDM VM
 -----------------
 
-The InvenioRDM VM is similar to the dev VM except it doesn't install as many packages and it adds imagemagick and installs nodejs 14.0.0 so the virtual machine is ready for use in a developer setting.
+The InvenioRDM VM is similar to the dev VM except it installes a more limited
+number of dev packages and those required for InvenioRDM, such as imagemagick. 
 
 ```shell
-    start-vm.bash invenio 2xlarge
+    start-vm.bash invenio-rdm 2xlarge focal
 ```
 
 Like previous example access with the `multipass` shell command.
@@ -132,7 +133,8 @@ Like previous example access with the `multipass` shell command.
     multipass shell
 ```
 
-A more complete exploration of running InvenioRDM is found in the [InvenioRDM-setup](InvenioRDM-setup.html)
+A more complete exploration of running InvenioRDM is found in the
+[InvenioRDM-setup](https://caltechlibrary.github.io/cloud-init-examples/InvenioRDM-setup.html)
 
 General purpose Bash scripts
 ----------------------------
@@ -142,6 +144,7 @@ I have provided three Bash scripts for starting/launching, getting info and stop
 1. start-vm.bash - starts an existing or launches a new virtual machine based on a related cloud init YAML file. If you're creating the machine pass a zie of nano, micro, small, medium, large, xlarge, or 2xlarge to create a machine with a similar profile to the AWS EC2 T4g sizes, see https://aws.amazon.com/ec2/instance-types/t4/
 2. stats-vm.bash - will return information about the machine (i.e. it runs `multipass info $MACHINE`)
 3. stop-vm-.bash - will stop the machine
+4. remove-vm.bash - will delete and purge a machine
 
 If you've defined a primary name for the machine the Bash scripts can be used without any additoinal parameters. If
 you provide a machine name as a parameter then the scripts will work with that machine name.

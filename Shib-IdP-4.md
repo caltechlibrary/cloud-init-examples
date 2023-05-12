@@ -2,10 +2,10 @@ Shibboleth IdP 4
 ================
 
 This is a recipe for setting a local Shibboleth IdP 4 (IdP stands for identity provider). The recipe use case is setting up an IdP for testing web applications that integrate Shibboleth SP (SP stands for "Service Provider", e.g. the application you're going to write that uses single sign-on via Shibboleth) . It uses
-Shibboleth IdP version 4, OpenJDK 11, Tomcat and Apache2. 
+Shibboleth IdP version 4, OpenJDK 11, Jetty9 and Apache2. 
 
 The Official Shibboleth IdP 4 documentation is at
-https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview.
+[https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview](https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview).
 
 This document summarizes the installation process for running under Ubuntu 20.04 LTS using standard Ubuntu packages (e.g. Apache2, Jetty9, OpenJDK 11) where appropriate. This hopely will ease running an IdP service under cloud-init and Multipass.
 
@@ -13,7 +13,7 @@ This document summarizes the installation process for running under Ubuntu 20.04
 Requirements
 ------------
 
-- Tomcat 9 (e.g. Ubuntu 20.04 LTS, tomcat9)
+- Jetty 9 (e.g. Ubuntu 20.04 LTS, tomcat9)
 - OpenJDK 11   (e.g. Ubuntu 20.04 LTS, default-jdk)
 - The latest identity provider from linked on https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview
 
@@ -30,7 +30,7 @@ the prefer for limited resources and have chosen a "small" VM.
 You can access the VM as with
 
 ```shell
-    ./multipass shell shib-idp
+    multipass shell shib-idp
 ```
 
 Additional prep
@@ -54,7 +54,7 @@ lines
 
 ```
 # Setup local idp.example.edu name
-192.168.64.154 idp.example.edu
+192.168.64.154 idp.example.edu idp
 ```
 
 On your host machine you can run `multipass info shib-ipd` to get
@@ -73,12 +73,12 @@ On the VM I create that script returned `/usr/lib/jvm/java-11-openjdk-arm64`. I 
 JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
 ```
 
-
+You should logout and back in to pickup the JAVA_HOME environment
+variable.
 
 At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.
-
 
 Installing the Shibboleth IdP 4 software
 ----------------------------------------
@@ -92,14 +92,15 @@ things I still need to do by hand.
 4. Deploy the war file so it is available to Jetty (the servlet engine)
 5. Proceed to configure shibboleth idp service
 
+(from your multipass shell)
+
 ```
-    multipass shell shib-idp
-    
+    cd $HOME
     curl -L -O https://shibboleth.net/downloads/identity-provider/latest4/shibboleth-identity-provider-4.2.1.zip
     
     unzip shibboleth-identity-provider-4.2.1.zip
     cd shibboleth-identity-provider-4.2.1
-    sudo ./bin/bash install.sh \
+    sudo ./bin/install.sh \
        -Didp.host.name=$(hostname -f) \
        -Didp.keysize=3072
 ```
@@ -154,36 +155,54 @@ Total time: 36 seconds
 When the installer has completed it will have created a "war" file.
 In my case it installed it in `/opt/shibboleth-idp/war/idp.war`.
 
-Now we need to update the ownership of some of the directories so
-`jetty` user can manage them.
-
-```shell
-   cd /opt/shibboleth-idp && sudo chown -R jetty logs/ metadata/ credentials/ conf/ war/
-```
-
 Getting Jetty to know about IdP
 ---------------------------------
 
-We need to tell Jetty9 where to find the Shibboleth IdP 4 service. We 
-do this by creating a `idp.xml` file in `/usr/share/jetty9/webapps/`.
-The command I used to do this is `sudo vi /usr/share/jetty9/webapps/idp.xml` and adding the following content before saving the file.
+Since we've install Shibboleth IdP 4 `/opt/shibboleth-idp` we need
+to provide a "context XML file" to tell Jetty where to find it.
 
-```xml
+For Jetty a context file lets us leave the WAR file in our Shibboleth-ipd directory and just point at it. The context file must
+match the name as the WAR file, i.e. `idp.xml` for a war file called `idp.war`. Use the command below to create our `idp.xml` in the 
+`/var/lib/jetty9/webapps` directory.
+
+```shell
+    sudo bash -c 'cat <<EOF > /var/lib/jetty9/webapps/idp.xml 
 <Configure class="org.eclipse.jetty.webapp.WebAppContext">
-  <Set name="war"><SystemProperty name="idp.home"/>/opt/shibboleth-idp/war/idp.war</Set>
   <Set name="contextPath">/idp</Set>
+  <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
   <Set name="extractWAR">false</Set>
   <Set name="copyWebDir">false</Set>
   <Set name="copyWebInf">true</Set>
   <Set name="persistTempDirectory">false</Set>
 </Configure>
+EOF'
 ```
 
-We should not restart the Jeyy9 service.
+The context file along with the war file and several directories in
+our `/opt/shibboleth-idp` need to be owned by the jetty user.
 
 ```shell
-    sudo systemctl restart jetty9
+    sudo su
+    cd /opt/shibboleth-idp
+    chown -R jetty:adm logs metadata credentials conf war
+    chown -R jetty:adm /var/lib/jetty9/webapps/idp.xml
+    exit
+    cd $HOME
 ```
+
+Now we can restart jetty and test our setup.
+
+```shell
+   sudo systemctl restart jetty9
+   sudo systemctl status jetty9
+   # NOTE: You need to wait a while, Jetty is slow to restart!!
+   lynx http://localhost:8080/idp/status
+```
+
+NOTE: The status end point describes the IdP setup. It indicates only
+that the WAR file is installed and running in Jetty. You don't
+have a working IdP yet!!
+
 
 Configuring Apache 2
 --------------------
@@ -196,16 +215,37 @@ to know when things are finally working.
     sudo su
     mkdir -p /var/www/html/idp.example.edu
     echo 'It Works!' > /var/www/html/idp.example.edu/index.html
+    chown -R www-data: /var/www/html/idp.example.edu
     exit
 ```
 
 You'll need your Apache 2 setup support SSL as well as reverse proxy.
 On Ubuntu the certificates should go in `/etc/ssl/certs` for the
-public key certific and `/etc/ssl/private` for the private key. You
-can use ACME certs (Let's Encrypt) if you like. The main thing
-is you need to know the full paths to the parts as we need that
-for our virtual host definition we complete later.
+public certificates (e.g. ".crt", ".pem") and `/etc/ssl/private` for the private key files (e.g. ".key").
 
+Since your VM will likely NOT be on a public network I've included
+a Bash script that will create self signed certificates using
+openssl.  The script is called `setup-self-signed-SSL-certs.bash`
+and can be found in either the GitHub repository under "scripts" directory at https://github.com/caltechlibrary/cloud-init-examples and
+should have been "transfered" into your VM's home directory if you created the VM using `start-vm.bash`.
+
+NOTE: `setup-self-signed-SSL-certs.bash` is interactive you'll need to answer the questions posed by `openssl` as it prompts.
+
+```shell
+    bash setup-self-signed-SSL-certs.bash
+```
+
+
+The script will create an "etc/ssl" directory tree in your home directory (e.g. /home/ubuntu). These should be copied to host machines `/etc/ssl/` directory. That can be done with
+
+```
+   sudo cp -vi etc/ssl/certs/* /etc/ssl/certs/
+   sudo cp -vi etc/ssl/private/* /etc/ssl/private/
+```
+
+NOTE: The default Apache configuration described below assumes certs in matching those created by the script. If you get your certificates another way (e.g. use ACME certs) you'll need to update the configuration appropriately.
+
+Next we need to enable some Apache modules to support using SSL.
 Update your Apache 2 to enable these the following modules
 
 - proxy_http
@@ -256,45 +296,36 @@ that to `/etc/apache2/site-available` and then use the Apache 2
     vi idp.example.edu.conf
     sudo cp idp.example.edu.conf /etc/apache2/sites-available/
     sudo a2ensite idp.example.edu.conf
+    sudo apache2ctl -t
     sudo systemctl restart apache2
 ```
 
 You should now have Apache 2 configure to talk to our IdP.
 
-
-Checking our configuration
---------------------------
-
-The script `./bin/status.sh` can be used to check if the install was
-successful. On my intial try it was not.
-
-```shell
-    cd /opt/shibboleth-idp/
-    ./bin/status.sh
-```
-
-This reported 
+You can check your Apache setup with
 
 ```
-(http://localhost/idp/status) http://localhost/idp/status
+lynx https://localhost
+lynx https://idp.example.edu
 ```
 
-We can use `lynx` to see the status at the URLs provided.
+You should see the "It Works!" page for both URLs after accepting
+the certificate (that is because the configuration is using the 
+"snakeoil" certs).
+
+Now let's see if our reverse proxy setup works.
 
 ```
-    lynx http://localhost/idp/status
+lynx https://idp.example.edu/idp/status
 ```
 
-So it looks like things are setup and our Shibboleth IdP is now running.
+If we see the Shibboeth IdP status page we're good to proceed.
 
-If you get errors. The Shibboleth documentation is less than helpful.
-I found this tutorial helpful, https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Debian-Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v4.x%20on%20Debian-Ubuntu%20Linux%20with%20Apache2%20%2B%20Jetty9.md as well as this page https://cloudinfrastructureservices.co.uk/install-shibboleth-sso-on-ubuntu-20-04/
 
-Note unlike the GitHub example I didn't compile anything. I used the stock Ubuntu 20.04 LTS apache2, Jetty9, default-jdk except the downloaded Shibboleth-IdP-4 which I compiled using its installer script. All my challenges was getting the JAVA / Jetty environment correct. That took me a while to sort out, hopefully you get up and running quickly.
+Configuring our IdP
+-------------------
 
-Unfornately we're not done quite yet.
+FIXME: Need to describe actually configuring the IdP service. 
 
-Wrapping things up
-------------------
+See [Shibboleth IdP References](Shib-IdP-References.html)
 
-On my host system I should now be able to use the multipass VM as my IdP. To do that

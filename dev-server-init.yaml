@@ -3,12 +3,13 @@ package_update: true
 package_upgrade: true
 fqdn: dev.local
 packages:
+  - sshfs
   - build-essential
   - git
   - snapcraft
   - autoconf
   - automake
-  - curl 
+  - curl
   - wget
   - tmux
   - tree
@@ -16,6 +17,7 @@ packages:
   - lynx
   - python3-dev
   - python3-pip
+  - python-is-python3
   - pandoc
   - rsync
   - libexpat1
@@ -23,7 +25,9 @@ packages:
   - apache2
   - apache2-utils
   - ssl-cert
-  - libapache2-mod-wsgi 
+  - libapache2-mod-wsgi
+  - makepasswd
+  - shellcheck
 groups:
   - docker
   - staff

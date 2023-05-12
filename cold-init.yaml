@@ -1,0 +1,95 @@
+#cloud-config
+#
+# This cloud init assume Ubuntu Jammy (22.04 LTS) for the host OS
+# If you use a different version you many need to update the
+# packages list.
+#
+# Write some helpful installer scripts to /usr/local/bin, these
+# can be run after VM is instanciated.
+#
+# - gchup-install.bash, installs Haskell via GHCup
+# - pandoc-build.bash, builds Pandoc from source using cabal
+# - postgrest-build.bash, builds PostgREST from source using stack
+#
+write_files:
+  - content: |
+      #!/bin/bash
+      export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
+      export BOOTSTRAP_HASKELL_GHC_VERSION=recommended
+      export BOOTSTRAP_HASKELL_CABAL_VERSION=recommended
+      export BOOTSTRAP_HASKELL_INSTALL_STACK=1
+      export BOOTSTRAP_HASKELL_INSTALL_HLS=1
+      export BOOTSTRAP_HASKELL_ADJUST_BASHRC=P 
+      curl --proto '=https' --tlsv1.2 \
+           -sSf https://get-ghcup.haskell.org | sh
+    path: /usr/local/sbin/ghcup-install.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      PATH=$HOME/.ghcup/bin:$PATH
+      export PATH
+      cabal update
+      cabal install --global pandoc-cli
+    path: /usr/local/sbin/pandoc-build.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      git clone https://github.com/PostgREST/postgrest /usr/local/src/postgrest
+      cd /usr/local/src/postgres && stack build --install-ghc --copy-bins --local-bin-path /usr/local/bin
+      cd
+    path: /usr/local/sbin/postgrest-build.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      
+      # Read me 1st
+      
+      You are ready to install Haskell, Pandoc from source and PostgREST
+      from source. Run the following commands.
+
+      ~~~
+      ghcup-install.bash
+      source $HOME/.ghcup/env
+      pandoc-build.bash
+      postgrest-build.bash
+      ~~~
+
+    owner: root:root
+    path: /usr/local/src/README.1st
+    permissions: '0664'
+package_upgrade: true
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, then package_update will be set to true
+#
+# packages may be supplied as a single package name or as a list
+# with the format [<package>, <version>] wherein the specific
+# package version will be installed.
+packages:
+  - aptitude
+  - tmux
+  - micro
+  - vim
+  - emacs
+  - tcsh
+  - build-essential
+  - autotools-dev
+  - autoconf
+  - automake
+  - git
+  - curl
+  - make
+  - pkg-config
+  - postgresql
+  - pgloader
+  - pgtop
+  - libncurses-dev
+  - libffi-dev
+  - libgmp-dev
+  - libncurses5
+  - zlib1g-dev
+  - shellcheck

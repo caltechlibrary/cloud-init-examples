@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Multipass and Cloud Init Examples</title>
+  <link rel="stylesheet" href="/css/site.css">
+
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header>
+<a href="https://library.caltech.edu"><img src="/assets/liblogo.gif" alt="Caltech Library logo"></a>
+</header>
+
+<nav>
+<ul>
+<li><a href="https://caltechlibrary.github.io">DLD Sandbox</a></li>
+<li><a href="index.html">README</a></li>
+<li><a href="LICENSE">LICENSE</a></li>
+<li><a href="documentation.html">Documentation</a></li>
+<li><a href="about.html">About</a></li>
+<li><a href="https://github.com/caltechlibrary/cloud-init-examples">GitHub</a></li>
+</ul>
+</nav>
+
+<section>
+<h2 id="setting-up-external-hostnames">Setting up external
+hostnames</h2>
+<p>There are times when it would be convient to refer to your VM with an
+external hostname during development. That can be done by configuring it
+in the VM as well as on the host system.</p>
+<h2 id="vm-hostname-setup">VM Hostname setup</h2>
+<p>You can setup your multipass instance to use an external host name.
+This can be done in these steps.</p>
+<ol type="1">
+<li>Get the IP address the VM is running under</li>
+<li>Define the new IP address/name relationship in
+<code>/etc/hosts</code></li>
+<li>Use <code>hostnamectl</code> to update the VM’s hostname</li>
+</ol>
+<p>In the example blow the VM name is called
+<code>minimal-dev</code>.</p>
+<p>To get the VM’s IP address you can run <code>multipass info</code>
+command. For the a machine called <code>minimal-dev</code> run</p>
+<pre class="shell"><code>    multipass info minimal-dev</code></pre>
+<p>On my system it reported the IP address 192.168.64.166. I want my VM
+to be visible from the host system as minimal-dev.example.edu. I now
+using the <code>multipass shell</code> command to access my VM then
+follow these steps. I will add a line to my <code>/etc/hosts</code> file
+on the VM for minimal-dev.example.edu using the vi text editor. The
+added lines should look like</p>
+<pre><code># minimal-dev.example.edu IP mapping
+192.168.64.166 minimal-dev.example.edu</code></pre>
+<p>The commands to add this are</p>
+<pre class="shell"><code>   sudo vi /etc/hosts
+   sudo hostnamectl set-hostname minimal-dev.example.edu</code></pre>
+<p>You can then check the setup with</p>
+<pre class="shell"><code>    hostname -f
+    hostname -i</code></pre>
+<p>This should report the fully qualified hostname and IP associated
+with it.</p>
+<h2 id="host-system-setup">Host system setup</h2>
+<p>On your host Unix-like system you can usually modify the
+<code>/etc/hosts</code> to include the same lines added in the VM’s
+<code>/etc/hosts</code> file.</p>
+<p>If all’s gone well you should be to run the following command
+successfully (my example the hostname is called
+<code>minimal-dev.example.edu</code>)</p>
+<pre class="shell"><code>    host minimal-dev.example.edu</code></pre>
+</section>
+
+<footer>
+<span><h1><A href="https://caltech.edu">Caltech</a></h1></span>
+<span>&copy; 2022 <a href="https://www.library.caltech.edu/copyright">Caltech library</a></span>
+<address>1200 E California Blvd, Mail Code 1-32, Pasadena, CA 91125-3200</address> 
+<span>Phone: <a href="tel:+1-626-395-3405">(626)395-3405</a></span>
+<span><a href="mailto:library@caltech.edu">Email Us</a></span>
+<a class="cl-hide" href="sitemap.xml">Site Map</a>
+</footer>
+<!-- START: PrettyFi from https://github.com/google/code-prettify -->
+<script>
+/* We want to add the class "prettyprint" to all the pre elements */
+var pre_list = document.querySelectorAll("pre");
+
+pre_list.forEach(function(elem) {
+    elem.classList.add("prettyprint");
+    elem.classList.add("linenums");/**/
+    elem.classList.add("json"); /**/
+});
+</script>
+<style>
+li.L0, li.L1, li.L2, li.L3, li.L4, li.L5, li.L6, li.L7, li.L8, li.L9
+{
+    color: #555;
+    list-style-type: decimal;
+}
+</style>
+<link rel="stylesheet" type="text/css" href="/css/prettify.css">
+<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_
+prettify.js"></script>
+<!--  END: PrettyFi from https://github.com/google/code-prettify -->
+</body>
+</html>

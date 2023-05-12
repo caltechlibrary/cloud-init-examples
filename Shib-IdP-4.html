@@ -5,242 +5,45 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Multipass and Cloud Init Examples</title>
-  <style>
-    html {
-      line-height: 1.5;
-      font-family: Georgia, serif;
-      font-size: 20px;
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 1em;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
-      font-size: 85%;
-      margin: 0;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      background-color: #1a1a1a;
-      border: none;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    code{white-space: pre-wrap;}
-    span.smallcaps{font-variant: small-caps;}
-    span.underline{text-decoration: underline;}
-    div.column{display: inline-block; vertical-align: top; width: 50%;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
-    pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-    pre > code.sourceCode > span:empty { height: 1.2em; }
-    .sourceCode { overflow: visible; }
-    code.sourceCode > span { color: inherit; text-decoration: inherit; }
-    div.sourceCode { margin: 1em 0; }
-    pre.sourceCode { margin: 0; }
-    @media screen {
-    div.sourceCode { overflow: auto; }
-    }
-    @media print {
-    pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-    }
-    pre.numberSource code
-      { counter-reset: source-line 0; }
-    pre.numberSource code > span
-      { position: relative; left: -4em; counter-increment: source-line; }
-    pre.numberSource code > span > a:first-child::before
-      { content: counter(source-line);
-        position: relative; left: -1em; text-align: right; vertical-align: baseline;
-        border: none; display: inline-block;
-        -webkit-touch-callout: none; -webkit-user-select: none;
-        -khtml-user-select: none; -moz-user-select: none;
-        -ms-user-select: none; user-select: none;
-        padding: 0 4px; width: 4em;
-        color: #aaaaaa;
-      }
-    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-    div.sourceCode
-      {   }
-    @media screen {
-    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-    }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
-    code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
+  <link rel="stylesheet" href="/css/site.css">
+
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">Multipass and Cloud Init Examples</h1>
+<header>
+<a href="https://library.caltech.edu"><img src="/assets/liblogo.gif" alt="Caltech Library logo"></a>
 </header>
+
+<nav>
+<ul>
+<li><a href="https://caltechlibrary.github.io">DLD Sandbox</a></li>
+<li><a href="index.html">README</a></li>
+<li><a href="LICENSE">LICENSE</a></li>
+<li><a href="documentation.html">Documentation</a></li>
+<li><a href="about.html">About</a></li>
+<li><a href="https://github.com/caltechlibrary/cloud-init-examples">GitHub</a></li>
+</ul>
+</nav>
+
+<section>
 <h1 id="shibboleth-idp-4">Shibboleth IdP 4</h1>
 <p>This is a recipe for setting a local Shibboleth IdP 4 (IdP stands for
 identity provider). The recipe use case is setting up an IdP for testing
 web applications that integrate Shibboleth SP (SP stands for “Service
 Provider”, e.g. the application you’re going to write that uses single
 sign-on via Shibboleth) . It uses Shibboleth IdP version 4, OpenJDK 11,
-Tomcat and Apache2.</p>
-<p>The Official Shibboleth IdP 4 documentation is at
-https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview.</p>
+Jetty9 and Apache2.</p>
+<p>The Official Shibboleth IdP 4 documentation is at <a
+href="https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview">https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview</a>.</p>
 <p>This document summarizes the installation process for running under
 Ubuntu 20.04 LTS using standard Ubuntu packages (e.g. Apache2, Jetty9,
 OpenJDK 11) where appropriate. This hopely will ease running an IdP
 service under cloud-init and Multipass.</p>
 <h2 id="requirements">Requirements</h2>
 <ul>
-<li>Tomcat 9 (e.g. Ubuntu 20.04 LTS, tomcat9)</li>
+<li>Jetty 9 (e.g. Ubuntu 20.04 LTS, tomcat9)</li>
 <li>OpenJDK 11 (e.g. Ubuntu 20.04 LTS, default-jdk)</li>
 <li>The latest identity provider from linked on
 https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview</li>
@@ -250,7 +53,7 @@ https://shibboleth.atlassian.net/wiki/spaces/IDP4/overview</li>
 about the prefer for limited resources and have chosen a “small” VM.</p>
 <pre class="shell"><code>    ./start-vm shib-idp small</code></pre>
 <p>You can access the VM as with</p>
-<pre class="shell"><code>    ./multipass shell shib-idp</code></pre>
+<pre class="shell"><code>    multipass shell shib-idp</code></pre>
 <h2 id="additional-prep">Additional prep</h2>
 <p>I recommend doing the following to easy setup later. We’re going to
 give our multipass instance a name, “idp.example.edu”. To do that we
@@ -264,7 +67,7 @@ editor “vi” but you can use whatever is your favorite editor
 In my case the IP address was 192.168.64.154 and I added the following
 lines</p>
 <pre><code># Setup local idp.example.edu name
-192.168.64.154 idp.example.edu</code></pre>
+192.168.64.154 idp.example.edu idp</code></pre>
 <p>On your host machine you can run <code>multipass info shib-ipd</code>
 to get your IP address.</p>
 <p>Make sure JAVA_HOME is set in <code>/etc/environment</code>. You can
@@ -274,6 +77,8 @@ find out the JAVA_HOME value needed with</p>
 <code>/usr/lib/jvm/java-11-openjdk-arm64</code>. I added the following
 line after the PATH setting in <code>/etc/environment</code>.</p>
 <pre><code>JAVA_HOME=&quot;/usr/lib/jvm/java-11-openjdk-arm64&quot;</code></pre>
+<p>You should logout and back in to pickup the JAVA_HOME environment
+variable.</p>
 <p>At this point we should be ready to install the Shibboleth IdP 4
 service following the Shibboleth IdP 4 documentation and installation
 scripts.</p>
@@ -289,13 +94,13 @@ things I still need to do by hand.</p>
 engine)</li>
 <li>Proceed to configure shibboleth idp service</li>
 </ol>
-<pre><code>    multipass shell shib-idp
-    
+<p>(from your multipass shell)</p>
+<pre><code>    cd $HOME
     curl -L -O https://shibboleth.net/downloads/identity-provider/latest4/shibboleth-identity-provider-4.2.1.zip
     
     unzip shibboleth-identity-provider-4.2.1.zip
     cd shibboleth-identity-provider-4.2.1
-    sudo ./bin/bash install.sh \
+    sudo ./bin/install.sh \
        -Didp.host.name=$(hostname -f) \
        -Didp.keysize=3072</code></pre>
 <p>The installer will ask for some base level configuration. You can
@@ -347,27 +152,44 @@ Total time: 36 seconds</code></pre>
 <p>When the installer has completed it will have created a “war” file.
 In my case it installed it in
 <code>/opt/shibboleth-idp/war/idp.war</code>.</p>
-<p>Now we need to update the ownership of some of the directories so
-<code>jetty</code> user can manage them.</p>
-<pre class="shell"><code>   cd /opt/shibboleth-idp &amp;&amp; sudo chown -R jetty logs/ metadata/ credentials/ conf/ war/</code></pre>
 <h2 id="getting-jetty-to-know-about-idp">Getting Jetty to know about
 IdP</h2>
-<p>We need to tell Jetty9 where to find the Shibboleth IdP 4 service. We
-do this by creating a <code>idp.xml</code> file in
-<code>/usr/share/jetty9/webapps/</code>. The command I used to do this
-is <code>sudo vi /usr/share/jetty9/webapps/idp.xml</code> and adding the
-following content before saving the file.</p>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode xml"><code class="sourceCode xml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">Configure</span><span class="ot"> class=</span><span class="st">&quot;org.eclipse.jetty.webapp.WebAppContext&quot;</span>&gt;</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Set</span><span class="ot"> name=</span><span class="st">&quot;war&quot;</span>&gt;&lt;<span class="kw">SystemProperty</span><span class="ot"> name=</span><span class="st">&quot;idp.home&quot;</span>/&gt;/opt/shibboleth-idp/war/idp.war&lt;/<span class="kw">Set</span>&gt;</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Set</span><span class="ot"> name=</span><span class="st">&quot;contextPath&quot;</span>&gt;/idp&lt;/<span class="kw">Set</span>&gt;</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Set</span><span class="ot"> name=</span><span class="st">&quot;extractWAR&quot;</span>&gt;false&lt;/<span class="kw">Set</span>&gt;</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Set</span><span class="ot"> name=</span><span class="st">&quot;copyWebDir&quot;</span>&gt;false&lt;/<span class="kw">Set</span>&gt;</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Set</span><span class="ot"> name=</span><span class="st">&quot;copyWebInf&quot;</span>&gt;true&lt;/<span class="kw">Set</span>&gt;</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Set</span><span class="ot"> name=</span><span class="st">&quot;persistTempDirectory&quot;</span>&gt;false&lt;/<span class="kw">Set</span>&gt;</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">Configure</span>&gt;</span></code></pre></div>
-<p>We should not restart the Jeyy9 service.</p>
-<pre class="shell"><code>    sudo systemctl restart jetty9</code></pre>
+<p>Since we’ve install Shibboleth IdP 4 <code>/opt/shibboleth-idp</code>
+we need to provide a “context XML file” to tell Jetty where to find
+it.</p>
+<p>For Jetty a context file lets us leave the WAR file in our
+Shibboleth-ipd directory and just point at it. The context file must
+match the name as the WAR file, i.e. <code>idp.xml</code> for a war file
+called <code>idp.war</code>. Use the command below to create our
+<code>idp.xml</code> in the <code>/var/lib/jetty9/webapps</code>
+directory.</p>
+<pre class="shell"><code>    sudo bash -c &#39;cat &lt;&lt;EOF &gt; /var/lib/jetty9/webapps/idp.xml 
+&lt;Configure class=&quot;org.eclipse.jetty.webapp.WebAppContext&quot;&gt;
+  &lt;Set name=&quot;contextPath&quot;&gt;/idp&lt;/Set&gt;
+  &lt;Set name=&quot;war&quot;&gt;/opt/shibboleth-idp/war/idp.war&lt;/Set&gt;
+  &lt;Set name=&quot;extractWAR&quot;&gt;false&lt;/Set&gt;
+  &lt;Set name=&quot;copyWebDir&quot;&gt;false&lt;/Set&gt;
+  &lt;Set name=&quot;copyWebInf&quot;&gt;true&lt;/Set&gt;
+  &lt;Set name=&quot;persistTempDirectory&quot;&gt;false&lt;/Set&gt;
+&lt;/Configure&gt;
+EOF&#39;</code></pre>
+<p>The context file along with the war file and several directories in
+our <code>/opt/shibboleth-idp</code> need to be owned by the jetty
+user.</p>
+<pre class="shell"><code>    sudo su
+    cd /opt/shibboleth-idp
+    chown -R jetty:adm logs metadata credentials conf war
+    chown -R jetty:adm /var/lib/jetty9/webapps/idp.xml
+    exit
+    cd $HOME</code></pre>
+<p>Now we can restart jetty and test our setup.</p>
+<pre class="shell"><code>   sudo systemctl restart jetty9
+   sudo systemctl status jetty9
+   # NOTE: You need to wait a while, Jetty is slow to restart!!
+   lynx http://localhost:8080/idp/status</code></pre>
+<p>NOTE: The status end point describes the IdP setup. It indicates only
+that the WAR file is installed and running in Jetty. You don’t have a
+working IdP yet!!</p>
 <h2 id="configuring-apache-2">Configuring Apache 2</h2>
 <p>We use Apache2 to “reverse proxy” to our Jetty service. That takes
 some additional setup. Let’s create some content to know when things are
@@ -375,14 +197,35 @@ finally working.</p>
 <pre><code>    sudo su
     mkdir -p /var/www/html/idp.example.edu
     echo &#39;It Works!&#39; &gt; /var/www/html/idp.example.edu/index.html
+    chown -R www-data: /var/www/html/idp.example.edu
     exit</code></pre>
 <p>You’ll need your Apache 2 setup support SSL as well as reverse proxy.
 On Ubuntu the certificates should go in <code>/etc/ssl/certs</code> for
-the public key certific and <code>/etc/ssl/private</code> for the
-private key. You can use ACME certs (Let’s Encrypt) if you like. The
-main thing is you need to know the full paths to the parts as we need
-that for our virtual host definition we complete later.</p>
-<p>Update your Apache 2 to enable these the following modules</p>
+the public certificates (e.g. “.crt”, “.pem”) and
+<code>/etc/ssl/private</code> for the private key files
+(e.g. “.key”).</p>
+<p>Since your VM will likely NOT be on a public network I’ve included a
+Bash script that will create self signed certificates using openssl. The
+script is called <code>setup-self-signed-SSL-certs.bash</code> and can
+be found in either the GitHub repository under “scripts” directory at
+https://github.com/caltechlibrary/cloud-init-examples and should have
+been “transfered” into your VM’s home directory if you created the VM
+using <code>start-vm.bash</code>.</p>
+<p>NOTE: <code>setup-self-signed-SSL-certs.bash</code> is interactive
+you’ll need to answer the questions posed by <code>openssl</code> as it
+prompts.</p>
+<pre class="shell"><code>    bash setup-self-signed-SSL-certs.bash</code></pre>
+<p>The script will create an “etc/ssl” directory tree in your home
+directory (e.g. /home/ubuntu). These should be copied to host machines
+<code>/etc/ssl/</code> directory. That can be done with</p>
+<pre><code>   sudo cp -vi etc/ssl/certs/* /etc/ssl/certs/
+   sudo cp -vi etc/ssl/private/* /etc/ssl/private/</code></pre>
+<p>NOTE: The default Apache configuration described below assumes certs
+in matching those created by the script. If you get your certificates
+another way (e.g. use ACME certs) you’ll need to update the
+configuration appropriately.</p>
+<p>Next we need to enable some Apache modules to support using SSL.
+Update your Apache 2 to enable these the following modules</p>
 <ul>
 <li>proxy_http</li>
 <li>ssl</li>
@@ -420,34 +263,53 @@ to <code>/etc/apache2/site-available</code> and then use the Apache 2
     vi idp.example.edu.conf
     sudo cp idp.example.edu.conf /etc/apache2/sites-available/
     sudo a2ensite idp.example.edu.conf
+    sudo apache2ctl -t
     sudo systemctl restart apache2</code></pre>
 <p>You should now have Apache 2 configure to talk to our IdP.</p>
-<h2 id="checking-our-configuration">Checking our configuration</h2>
-<p>The script <code>./bin/status.sh</code> can be used to check if the
-install was successful. On my intial try it was not.</p>
-<pre class="shell"><code>    cd /opt/shibboleth-idp/
-    ./bin/status.sh</code></pre>
-<p>This reported</p>
-<pre><code>(http://localhost/idp/status) http://localhost/idp/status</code></pre>
-<p>We can use <code>lynx</code> to see the status at the URLs
-provided.</p>
-<pre><code>    lynx http://localhost/idp/status</code></pre>
-<p>So it looks like things are setup and our Shibboleth IdP is now
-running.</p>
-<p>If you get errors. The Shibboleth documentation is less than helpful.
-I found this tutorial helpful,
-https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Debian-Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v4.x%20on%20Debian-Ubuntu%20Linux%20with%20Apache2%20%2B%20Jetty9.md
-as well as this page
-https://cloudinfrastructureservices.co.uk/install-shibboleth-sso-on-ubuntu-20-04/</p>
-<p>Note unlike the GitHub example I didn’t compile anything. I used the
-stock Ubuntu 20.04 LTS apache2, Jetty9, default-jdk except the
-downloaded Shibboleth-IdP-4 which I compiled using its installer script.
-All my challenges was getting the JAVA / Jetty environment correct. That
-took me a while to sort out, hopefully you get up and running
-quickly.</p>
-<p>Unfornately we’re not done quite yet.</p>
-<h2 id="wrapping-things-up">Wrapping things up</h2>
-<p>On my host system I should now be able to use the multipass VM as my
-IdP. To do that</p>
+<p>You can check your Apache setup with</p>
+<pre><code>lynx https://localhost
+lynx https://idp.example.edu</code></pre>
+<p>You should see the “It Works!” page for both URLs after accepting the
+certificate (that is because the configuration is using the “snakeoil”
+certs).</p>
+<p>Now let’s see if our reverse proxy setup works.</p>
+<pre><code>lynx https://idp.example.edu/idp/status</code></pre>
+<p>If we see the Shibboeth IdP status page we’re good to proceed.</p>
+<h2 id="configuring-our-idp">Configuring our IdP</h2>
+<p>FIXME: Need to describe actually configuring the IdP service.</p>
+<p>See <a href="Shib-IdP-References.html">Shibboleth IdP
+References</a></p>
+</section>
+
+<footer>
+<span><h1><A href="https://caltech.edu">Caltech</a></h1></span>
+<span>&copy; 2022 <a href="https://www.library.caltech.edu/copyright">Caltech library</a></span>
+<address>1200 E California Blvd, Mail Code 1-32, Pasadena, CA 91125-3200</address> 
+<span>Phone: <a href="tel:+1-626-395-3405">(626)395-3405</a></span>
+<span><a href="mailto:library@caltech.edu">Email Us</a></span>
+<a class="cl-hide" href="sitemap.xml">Site Map</a>
+</footer>
+<!-- START: PrettyFi from https://github.com/google/code-prettify -->
+<script>
+/* We want to add the class "prettyprint" to all the pre elements */
+var pre_list = document.querySelectorAll("pre");
+
+pre_list.forEach(function(elem) {
+    elem.classList.add("prettyprint");
+    elem.classList.add("linenums");/**/
+    elem.classList.add("json"); /**/
+});
+</script>
+<style>
+li.L0, li.L1, li.L2, li.L3, li.L4, li.L5, li.L6, li.L7, li.L8, li.L9
+{
+    color: #555;
+    list-style-type: decimal;
+}
+</style>
+<link rel="stylesheet" type="text/css" href="/css/prettify.css">
+<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_
+prettify.js"></script>
+<!--  END: PrettyFi from https://github.com/google/code-prettify -->
 </body>
 </html>

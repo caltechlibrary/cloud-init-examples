@@ -1,0 +1,69 @@
+---- START CUT ------------------
+FIXME: All the prose is broken here, I haven't gotten the IdP to actually use the htpasswd file correctly and the admin user setup for Hello world returns 500 errors.
+
+### Next two steps
+
+As stated in [Configuration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631515/Configuration) the first step to bring up an IdP from scratch is to configure
+
+1. [Authentication](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631601)
+2. [Attribute Resolver](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631549)
+
+Then we can move onto the [Hello World](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553) and see if things actually work.
+
+
+Configure authentication starts with loading the idp.authn.Password
+module.
+
+```shell
+    # NOTE: we should be the root user and
+    # the working directory is assumed to be /opt/shibboleth-idp
+    # where we installed our IdP software.
+    bin/module.sh -t idp.authn.Password
+    bin/module.sh -e idp.authn.Password
+```
+
+Update `conf/authn/password-authn-config.xml` uncommenting the line with `shibboleth.HTPasswdValidator` and commenting out the line with `shibboleth.LDAPValidator` .  We also need to create the "demo.htpasswd" file in the `credentials` directory.
+
+```shell
+    vi conf/authn/password-authn-config.xml
+    htpasswd -c credentials/demo.htpasswd admin
+    chown jetty:adm credentials/demo.htpasswd
+    chmod 660 credentials/demo.htpasswd
+```
+
+FIXME: This isn't enough to configure the authentication, haven't even got to the Attribute Resolver yet!
+
+
+### Setting Hello World to test
+
+I recommend enabling the "hello" or "hello world" module. Flows are the data paths take when a user authenticates via Shibboleth's IdP. The "hello" module provides a way to see if the IdP is working without having a service provider implemented yet (see [HelloWorldConfiguration](https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1289683553/HelloWorldConfiguration) for details).
+
+Modules can be enable, disabled and tests. Shibboleth IdP 4 package provides a script for that. The `modules.sh` script is found in the `bin` folder. It has a `--help` option which explains how it can be used.
+
+While the status end point indicates the `idp.admin.Hello` module is enabled it doesn't work  out of the box.  These are the step I took
+to get it working and confirm the IdP was working before going on to configure it.
+
+```shell
+    sudo su
+    cd /opt/shibboleth-idp
+    ./bin/module.sh -t idp.admin.Hello
+    ./bin/module.sh -e idp.admin.Hello
+```
+
+FIXME: This is failing, status 500, probably because authentication module isn't configured yet though there is some ambiguity in the docs
+
+If this works then we can test it.
+
+```shell
+    lynx http://localhost:8080/idp/profile/admin/hello
+```
+
+If you get a 500 error then something isn't working yet.  It is probably something more that needs to be configured.
+
+
+### Configuring, populating accounts for our IdP service
+
+FIXME: This is a section that I describe how to to setup up additional non-admin accounts in the htpasswd file. ...
+
+---- END CUT --------------------
+
