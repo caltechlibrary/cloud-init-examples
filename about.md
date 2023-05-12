@@ -13,7 +13,7 @@ authors:
 
 repository-code: "https://github.com/caltechlibrary/cloud-init-examples"
 version: 0.0.6
-license-url: "https://data.caltech.edu/license"
+license-url: "https://caltechlibrary.github.io/cloud-init-examples/LICENSE"
 
 
 ---
@@ -33,7 +33,7 @@ This is a collection of Bash scripts and cloud-init YAML files to be
 used with multipass for generating virtual machines useful for software
 development in libraries and archives.
 
-- License: <https://data.caltech.edu/license>
+- License: <https://caltechlibrary.github.io/cloud-init-examples/LICENSE>
 - GitHub: <https://github.com/caltechlibrary/cloud-init-examples>
 - Issues: <https://github.com/caltechlibrary/cloud-init-examples/issues>
 
