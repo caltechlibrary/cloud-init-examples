@@ -9,5 +9,5 @@ abstract: This is a collection of Bash scripts and cloud-init YAML files to be u
 repository-code: "https://github.com/caltechlibrary/cloud-init-examples"
 type: software
 version: 0.0.6
-license-url: "https://data.caltech.edu/license"
+license-url: "https://caltechlibrary.github.io/cloud-init-examples/LICENSE"
 date-released: 2023-05-12
