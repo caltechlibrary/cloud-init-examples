@@ -28,6 +28,9 @@ packages:
   - docker-compose-v2
   - makepasswd
   - shellcheck
+snap:
+  commands:
+    - snap install --classic certbot 
 groups:
   - docker
   - staff
