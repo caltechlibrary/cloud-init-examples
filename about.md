@@ -12,7 +12,7 @@ authors:
     orcid: "https://orcid.org/0000-0003-0900-6903"
 
 repository-code: "https://github.com/caltechlibrary/cloud-init-examples"
-version: 0.0.6
+version: 0.0.7
 license-url: "https://caltechlibrary.github.io/cloud-init-examples/LICENSE"
 
 
@@ -21,7 +21,7 @@ license-url: "https://caltechlibrary.github.io/cloud-init-examples/LICENSE"
 About this software
 ===================
 
-## cloud-init-examples 0.0.6
+## cloud-init-examples 0.0.7
 
 ### Authors
 

@@ -1,7 +1,7 @@
 #cloud-config
 #
 # Newstack-init.yaml provides a development environemt for building
-# web applications based on PostgreSQL 15, PostgREST 11, Pandoc 3,
+# web applications based on PostgreSQL 16, PostgREST 12, Pandoc 3.1,
 # and using Python 3's http.server to emulate a front end web server.
 #
 # This cloud init target Ubuntu's Multipass and assume the image
@@ -88,6 +88,18 @@ write_files:
     path: /usr/local/sbin/postgrest-build.bash
     owner: root:root
     permissions: '0775'
+  - content: |
+      #!/bin/bash
+      python3 -m pip install idutils
+      python3 -m pip install sqlfluff
+      python3 -m pip install pylint
+      python3 -m pip install progressbar2
+      python3 -m pip install pybtex
+      python3 -m pip install feedgen
+      python3 -m pip install dateutil
+  - content: |
+      #!/bin/bash
+      snap install yq
 package_upgrade: true
 # Install additional packages on first boot
 #
@@ -99,11 +111,12 @@ package_upgrade: true
 # with the format [<package>, <version>] wherein the specific
 # package version will be installed.
 packages:
-  - ubuntu-desktop
+#  - ubuntu-desktop
   - aptitude
   - tmux
   - micro
   - vim
+  - vis
   - emacs
   - tcsh
   - build-essential
@@ -114,7 +127,14 @@ packages:
   - curl
   - make
   - pkg-config
-  - postgresql
+  - postgresql-16
+  - postgresql-16-postgis
+  - postgresql-16-postgis-scripts
+  - postgresql-16-mysql-fdw
+  - postgresql-plpython3-16
+  - postgresql-16-pllua
+  - postgresql-16-plpgsql-check
+  - postgresql-16-semver
   - pgloader
   - pgtop
   - libncurses-dev

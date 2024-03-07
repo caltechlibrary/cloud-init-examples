@@ -1,0 +1,42 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+fqdn: invenio-rdm.local
+apt:
+  preserve_sources_list: false
+  sources:
+    deadsnakes-ppa:
+      source: ppa:deadsnakes/ppa
+packages:
+  - sshfs
+  - build-essential
+  - git
+  - lynx
+  - tmux
+  - curl
+  - python3-pip
+  - python3.9
+  - python3.9-dev
+  - python3.9-distutils
+  - rsync
+  - nginx
+  - imagemagick
+  - pkg-config
+  - libxml2-dev
+  - libxmlsec1-dev
+  - docker.io
+  - docker-compose-v2
+  - makepasswd
+  - shellcheck
+snap:
+  commands:
+    - snap install --classic certbot 
+groups:
+  - docker
+  - staff
+  - www-data
+runcmd:
+  - adduser ubuntu docker
+  - adduser ubuntu staff
+  - adduser ubuntu www-data
+  - [ python3, -m, pip, install, invenio-cli ]
