@@ -38,31 +38,47 @@
 write_files:
   - content: |
       #!/bin/bash
-      mkdir -p $HOME/bin
-      echo 'export PATH="$HOME/bin:$PATH"' >>"${HOME}/.bashrc"
-      cat <<EOT
-
-      You have added ${HOME}/bin to the PATH in your .bashrc
-      file. To update the path without logging out and in
-      do
-      
-              source $HOME/.bashrc
-      
-      EOT
-    path: /usr/local/sbin/setup-home-bin.bash
+      python3 -m pip install idutils
+      python3 -m pip install sqlfluff
+      python3 -m pip install pylint
+      python3 -m pip install progressbar2
+      python3 -m pip install pybtex
+      python3 -m pip install feedgen
+      python3 -m pip install python-dateutil
+    path: /usr/local/sbin/00-add-python-packages.bash
     owner: root:root
     permissions: '0775'
   - content: |
       #!/bin/bash
-      export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
-      export BOOTSTRAP_HASKELL_GHC_VERSION=recommended
-      export BOOTSTRAP_HASKELL_CABAL_VERSION=recommended
-      export BOOTSTRAP_HASKELL_INSTALL_STACK=1
-      export BOOTSTRAP_HASKELL_INSTALL_HLS=1
-      export BOOTSTRAP_HASKELL_ADJUST_BASHRC=P 
-      curl --proto '=https' --tlsv1.2 \
-           -sSf https://get-ghcup.haskell.org | sh
-    path: /usr/local/sbin/ghcup-install.bash
+      cd
+      snap install go --classic
+      export GOPATH=$HOME
+      mkdir -p "${HOME}/bin"
+      mkdir -p "${HOME}/src/github.com/caltechlibrary"
+      for REPO in irdmtools datatools dataset newt; do
+        cd "${HOME}/src/github.com/caltechlibrary"
+        git clone "https://github.com/caltechlibrary/${REPO}"
+        cd "${REPO}"
+        make
+        make install
+        cd "${HOME}/src/github.com/caltechlibrary"
+      done
+      cd 
+    path: /usr/local/sbin/02-add-go-and-caltechlibrary-tools.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      #export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
+      #export BOOTSTRAP_HASKELL_GHC_VERSION=recommended
+      #export BOOTSTRAP_HASKELL_CABAL_VERSION=recommended
+      #export BOOTSTRAP_HASKELL_INSTALL_STACK=1
+      #export BOOTSTRAP_HASKELL_INSTALL_HLS=1
+      #export BOOTSTRAP_HASKELL_ADJUST_BASHRC=P 
+      #curl --proto '=https' --tlsv1.2 \
+      #     -sSf https://get-ghcup.haskell.org | sh
+      curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+    path: /usr/local/sbin/03-ghcup-install.bash
     owner: root:root
     permissions: '0775'
   - content: |
@@ -75,7 +91,7 @@ write_files:
       make
       cp -v $(find . -type f -name pandoc) "${HOME}/bin"
       cp -v $(find . -type f -name pandoc) "${HOME}/bin/pandoc-server"
-    path: /usr/local/sbin/pandoc-build.bash
+    path: /usr/local/sbin/04-pandoc-build.bash
     owner: root:root
     permissions: '0775'
   - content: |
@@ -85,19 +101,7 @@ write_files:
       cd src/postgres 
       stack build --install-ghc --copy-bins --local-bin-path $HOME/bin
       cd
-    path: /usr/local/sbin/postgrest-build.bash
-    owner: root:root
-    permissions: '0775'
-  - content: |
-      #!/bin/bash
-      python3 -m pip install idutils
-      python3 -m pip install sqlfluff
-      python3 -m pip install pylint
-      python3 -m pip install progressbar2
-      python3 -m pip install pybtex
-      python3 -m pip install feedgen
-      python3 -m pip install dateutil
-    path: /usr/local/sbin/add-python-packages.bash
+    path: /usr/local/sbin/05-postgrest-build.bash
     owner: root:root
     permissions: '0775'
   - content: |
@@ -109,7 +113,7 @@ write_files:
            curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.12.0/opensearch-2.12.0-linux-x64.deb
            dpkg -i opensearch-2.12.0-linux-x64.deb
            ;;
-         arm64)
+         arm64|aarch64)
            curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.12.0/opensearch-2.12.0-linux-arm64.deb
            dpkg -i opensearch-2.12.0-linux-arm64.deb
            ;;
@@ -117,24 +121,23 @@ write_files:
          echo "Unsupport CPU ${CPU} see <https://opensearch.org/downloads.html>"
          ;;
       esac
-    path: /usr/local/sbin/add-opensearch.bash
+    path: /usr/local/sbin/06-add-opensearch.bash
     owner: root:root
     permissions: '0775'
   - content: |
       #!/bin/bash
-      cd
-      snap install go --classic
-      export GOPATH=/usr/local
-      mkdir -p /usr/local/src/github.com/caltechlibrary
-      for REPO in irdmtools datatools dataset newt; do
-        cd /usr/local/src/github.com/caltechlibrary
-        git clone "https://github.com/caltechlibrary/${REPO}"
-        cd "${REPO}"
-        make;make install
-        cd /usr/local/src/github.com/caltechlibrary
-      done
-      cd 
-    path: /usr/local/sbin/add-caltechlibrary-tools.bash
+      mkdir -p $HOME/bin
+      echo 'export PATH="$HOME/bin:$PATH"' >>"${HOME}/.bashrc"
+      cat <<EOT
+
+      You have added ${HOME}/bin to the PATH in your .bashrc
+      file. To update the path without logging out and in
+      do
+      
+              source $HOME/.bashrc
+      
+      EOT
+    path: /usr/local/sbin/07-setup-home-bin.bash
     owner: root:root
     permissions: '0775'
 package_upgrade: true
@@ -182,3 +185,12 @@ packages:
   - shellcheck
   - python3
   - python3-pip
+  - libffi-dev
+  - libffi6
+  - libgmp-dev
+  - libgmp10
+  - libncurses-dev
+  - libncurses5
+  - libtinfo5
+# Note we install Ubuntu/Debian's Pandoc 2.9 because GHC may have issues on aarch64.
+  - pandoc
