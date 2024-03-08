@@ -97,9 +97,46 @@ write_files:
       python3 -m pip install pybtex
       python3 -m pip install feedgen
       python3 -m pip install dateutil
+    path: /usr/local/sbin/add-python-packages.bash
+    owner: root:root
+    permissions: '0775'
   - content: |
       #!/bin/bash
-      snap install yq
+      cd
+      CPU="$(uname -m)"
+      case "${CPU}" in
+         x86_64|amd64)
+           curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.12.0/opensearch-2.12.0-linux-x64.deb
+           dpkg -i opensearch-2.12.0-linux-x64.deb
+           ;;
+         arm64)
+           curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.12.0/opensearch-2.12.0-linux-arm64.deb
+           dpkg -i opensearch-2.12.0-linux-arm64.deb
+           ;;
+         *)
+         echo "Unsupport CPU ${CPU} see <https://opensearch.org/downloads.html>"
+         ;;
+      esac
+    path: /usr/local/sbin/add-opensearch.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      cd
+      snap install go --classic
+      export GOPATH=/usr/local
+      mkdir -p /usr/local/src/github.com/caltechlibrary
+      for REPO in irdmtools datatools dataset newt; do
+        cd /usr/local/src/github.com/caltechlibrary
+        git clone "https://github.com/caltechlibrary/${REPO}"
+        cd "${REPO}"
+        make;make install
+        cd /usr/local/src/github.com/caltechlibrary
+      done
+      cd 
+    path: /usr/local/sbin/add-caltechlibrary-tools.bash
+    owner: root:root
+    permissions: '0775'
 package_upgrade: true
 # Install additional packages on first boot
 #
@@ -143,3 +180,5 @@ packages:
   - libncurses5
   - zlib1g-dev
   - shellcheck
+  - python3
+  - python3-pip
