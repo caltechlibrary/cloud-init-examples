@@ -45,13 +45,13 @@ write_files:
       python3 -m pip install pybtex
       python3 -m pip install feedgen
       python3 -m pip install python-dateutil
-    path: /usr/local/sbin/00-add-python-packages.bash
+    path: /usr/local/sbin/01-add-python-packages.bash
     owner: root:root
     permissions: '0775'
   - content: |
       #!/bin/bash
       cd
-      snap install go --classic
+      sudo snap install go --classic
       export GOPATH=$HOME
       mkdir -p "${HOME}/bin"
       mkdir -p "${HOME}/src/github.com/caltechlibrary"
