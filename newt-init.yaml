@@ -9,8 +9,11 @@
 # with Multipass call "newstack" and accessing it via Multipass's
 # shell.
 #
+# You need more than the default disk image size for fit all the stuff.
+# When you initialize your VM use the following command
+#
 # ~~~
-# multipass launch --name newstack --cloud-init newstack-init.yaml
+# multipass launch --disk 50G --name newstack --cloud-init newstack-init.yaml
 # ~~~
 #
 # When you're done you can stop the VM with
