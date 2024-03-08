@@ -13,7 +13,10 @@
 # When you initialize your VM use the following command
 #
 # ~~~
-# multipass launch --disk 50G --name newstack --cloud-init newstack-init.yaml
+# multipass launch --disk 50G \
+#           --memory 2G \
+#           --name newstack \
+#           --cloud-init newstack-init.yaml
 # ~~~
 #
 # When you're done you can stop the VM with
