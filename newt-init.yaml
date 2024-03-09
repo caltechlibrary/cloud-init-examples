@@ -1,10 +1,13 @@
 #cloud-config
 #
 # newt-init.yaml provides a development environemt for building
-# web applications based on PostgreSQL 16, PostgREST 12, Pandoc 3.1,
-# and using Python 3's http.server to emulate a front end web server.
+# web applications based on PostgreSQL 16, PostgREST 12, and Newt.
+# It also include Python 3 for web service development and 
+# generates a "ws" command using and using Python 3's http.server
+# to emulate a front end web server.
 #
-# Two full text search engine options are also available.
+# Two full text search engine options are also available. Both
+# can function as JSON data sources in a Newt application.
 #
 #   Solr 9.4
 #   Opensearch 2.11.1
@@ -20,7 +23,7 @@
 # ~~~
 # multipass launch --name newt-machine \
 #                  --memory 4G \
-#                  --disk 50G \
+#                  --disk 250G \
 #                  --cloud-init newt-init.yaml
 # ~~~
 #
@@ -50,30 +53,22 @@
 # 5. 05-pandoc-build.bash, downloads the latest Pandoc and builds it
 # 6. 06-postgrest-build.bash, downloads the latest PostgREST and builds it.
 # 7. 07-add-newt.bash, downloads the Opensearch/Opensearch Dashbaord debs and installs them
+# 8. 08-add-newt.bash, downloads Solr 9.5.0 and installs it from a tar ball.
 #
 write_files:
-###   - content: |
-###       You are now ready to start working with your Opensearch Machine. Run
-###       You then need to run following to configure this virtual machine for
-###       development. 
-### 
-###           bash ./sbin/01-setup-scripts.bash
-### 
-###       Your may wish to run other scripts in the `$HOME/sbin` directory
-###       depending on your development needs.
-###       Finnally remember to resource your `.bashrc` file after you install
-###       any software to pickup the environment changes defined in it.
-### 
-###           . .bashrc
-###
-###     path: /home/ubuntu/README.1st
-###     owner: ubuntu:ubuntu
-###     permissions: '0664'
   - content: |
       #!/bin/bash
       mkdir -p $HOME/bin
       mkdir -p $HOME/sbin
+      echo "Setting up SSH access to $(HOSTNAME)"
+      ssh-keygen
+      echo -n "Enter your GitHub username: "
+      read -r GITHUB_USER
+      if [ "${GITHUB_USER}" != "" ]; then
+        curl -L -o - "https://github.com/${GITHUB_USER}.keys" >>.ssh/authorized_keys
+      fi
       echo 'export PATH="$HOME/bin:$HOME/sbin:$PATH"' >>"${HOME}/.bashrc"
+      IP_ADDRESS=$(hostname -I | cut -d\  -f 1)
       cat <<EOT
 
       You have added ${HOME}/bin to the PATH in your .bashrc
@@ -82,6 +77,11 @@ write_files:
       
               . .bashrc
       
+      If you're running solr you can use SSH on the host system
+      to port forward http:127.0.0.1:8983/solr with
+
+             ssh -L 8983:127.0.0.1:8983 ubuntu@${IP_ADDRESS}
+
       EOT
     path: /usr/local/sbin/01-setup-scripts.bash
     owner: root:root
@@ -183,12 +183,73 @@ write_files:
       sudo systemctl start opensearch
       sudo systemctl enable opensearch-dashboards
       sudo systemctl start opensearch-dashboards
+      IP_ADDRESS=$(hostname -I | cut -d\  -f 1)
+      cat <<EOT
+        Openseach should be setup and can the REST API can be reached on port 9200. You
+        can use SSH to port forward that port with the following command on the host system.
+
+             ssh -L 9200:localhost:9200 ubuntu@${IP_ADDRESS}
+
+      EOT
     path: /usr/local/sbin/07-add-opensearch.bash
     owner: root:root
     permissions: '0775'
   - content: |
       #!/bin/bash
-      echo "FIXME: script to instaled Solr 9.4 not implemented yet."
+      cd
+      echo "Checking CPU type to see if Solr 9.5 is supported."
+      CPU="$(uname -m)"
+      case "${CPU}" in
+         arm32v7)
+           echo "${CPU}, this install script is untested"
+           ;;
+         arm64v8)
+           echo "${CPU}, this install script is untested"
+           ;;
+         ppc64le)
+           echo "${CPU}, this install script is untested"
+           ;;
+         s390x)
+           echo "${CPU}, this install script is untested"
+           ;;
+         x86_64|amd64)
+           echo "${CPU}, should work on Multipass VM"
+           ;;
+         arm64|aarch64)
+           echo "${CPU}, should work on Multipass VM"
+           ;;
+         *)
+           echo "Unsupport CPU ${CPU} see <https://solr.apache.org/downloads.html>"
+           exit 1
+           ;;
+      esac
+      # Download the binary distribution from solr.apache.org
+      curl -L -O https://dlcdn.apache.org/solr/solr/9.5.0/solr-9.5.0.tgz
+      # Extract the installer script
+      tar vxzf solr-9.5.0.tgz solr-9.5.0/bin/install_solr_service.sh \
+                              solr-9.5.0/examples \
+                              solr-9.5.0/docs
+      # Run the installer as "root"
+      sudo bash solr-9.5.0/bin/install_solr_service.sh solr-9.4.1.tgz
+      # Add ubuntu user to solr group.
+      sudo adduser $USER solr
+      ulimit -Hc 65536
+      ulimit -Hu 65536
+      IP_ADDRESS=$(hostname -I | cut -d\  -f 1)
+      cat <<EOT
+
+        Solr should be running on port 8983 by default. You are ready
+        to start exploring Solr. :-)
+
+        Examples can be found in solr-9.5.0/examples
+
+        If you're running solr you can use SSH on the host system
+        to port forward http:127.0.0.1:8983/solr with
+
+             ssh -L 8983:127.0.0.1:8983 ubuntu@${IP_ADDRESS}
+
+      EOT
+      
     path: /usr/local/sbin/08-add-solr.bash
     owner: root:root
     permissions: '0775'
@@ -219,6 +280,7 @@ packages:
   - curl
   - lynx
   - make
+  - pandoc
   - pkg-config
   - postgresql-16
   - postgresql-16-postgis
@@ -246,3 +308,5 @@ packages:
   - libncurses5
   - libtinfo5
   - httpie
+  - tree
+  - openjdk-11-jdk 
