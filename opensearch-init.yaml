@@ -1,41 +1,36 @@
 #cloud-config
 #
-# newt-init.yaml provides a development environemt for building
+# opensearch-init.yaml provides a development environemt for building
 # web applications based on PostgreSQL 16, PostgREST 12, Pandoc 3.1,
 # and using Python 3's http.server to emulate a front end web server.
 #
-# Two full text search engine options are also available.
-#
-#   Solr 9.4
-#   Opensearch 2.11.1
-#
 # This cloud init target Ubuntu's Multipass and assume the image
 # available is Jammy (22.04 LTS). Here's an example creating a VM
-# with Multipass call "newt-machine" and accessing it via Multipass's
+# with Multipass call "opensearch-machine" and accessing it via Multipass's
 # shell.
 #
 # You need more than the default disk image size for fit all the stuff.
 # When you initialize your VM use the following command
 #
 # ~~~
-# multipass launch --name newt-machine \
+# multipass launch --name opensearch-machine \
 #                  --memory 4G \
 #                  --disk 50G \
-#                  --cloud-init newt-init.yaml
+#                  --cloud-init opensearch-init.yaml
 # ~~~
 #
 # When you're done you can stop the VM with
 #
 # ~~~
-# multipass stop newt-machine
+# multipass stop opensearch-machine
 # ~~~
 #
-# You can remove newt-machine completely with
+# You can remove opensearch-machine completely with
 #
 # ~~~
-# multipass stop newt-machine
-# multipass delete newt-machine
-# multipass purge newt-machine
+# multipass stop opensearch-machine
+# multipass delete opensearch-machine
+# multipass purge opensearch-machine
 # ~~~
 #
 # The first time you run your VM you will need to run the following
@@ -49,7 +44,7 @@
 # 4. 04-ghcup-install.bash, installs Haskell toolchain and manager
 # 5. 05-pandoc-build.bash, downloads the latest Pandoc and builds it
 # 6. 06-postgrest-build.bash, downloads the latest PostgREST and builds it.
-# 7. 07-add-newt.bash, downloads the Opensearch/Opensearch Dashbaord debs and installs them
+# 7. 07-add-opensearch.bash, downloads the Opensearch/Opensearch Dashbaord debs and installs them
 #
 write_files:
 ###   - content: |
@@ -159,19 +154,32 @@ write_files:
   - content: |
       #!/bin/bash
       cd
+      echo -n "Enter an admin password to use with Opensearch: "
+      read -s ADMIN_PASSWORD
+      cat <<EOT1 >>.bashrc
+      
+      # Opensearch Inital Admin Setup
+      export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${ADMIN_PASSWORD}"
+      
+      EOT1
+      
       CPU="$(uname -m)"
       case "${CPU}" in
          x86_64|amd64)
            curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/2.11.1/opensearch-dashboards-2.11.1-linux-x64.deb
            curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.11.1/opensearch-2.11.1-linux-x64.deb
-           sudo dpkg -i opensearch-2.11.1-linux-x64.deb
-           sudo dpkg -i opensearch-dashboards-2.11.1-linux-x64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-2.11.1-linux-x64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-dashboards-2.11.1-linux-x64.deb
            ;;
          arm64|aarch64)
            curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/2.11.1/opensearch-dashboards-2.11.1-linux-arm64.deb
            curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.11.1/opensearch-2.11.1-linux-arm64.deb
-           sudo dpkg -i opensearch-2.11.1-linux-arm64.deb
-           sudo dpkg -i opensearch-dashboards-2.11.1-linux-arm64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-2.11.1-linux-arm64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-dashboards-2.11.1-linux-arm64.deb
            ;;
          *)
          echo "Unsupport CPU ${CPU} see <https://opensearch.org/downloads.html>"
@@ -184,12 +192,6 @@ write_files:
       sudo systemctl enable opensearch-dashboards
       sudo systemctl start opensearch-dashboards
     path: /usr/local/sbin/07-add-opensearch.bash
-    owner: root:root
-    permissions: '0775'
-  - content: |
-      #!/bin/bash
-      echo "FIXME: script to instaled Solr 9.4 not implemented yet."
-    path: /usr/local/sbin/08-add-solr.bash
     owner: root:root
     permissions: '0775'
 package_upgrade: true
