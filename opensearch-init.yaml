@@ -191,6 +191,12 @@ write_files:
       sudo systemctl start opensearch
       sudo systemctl enable opensearch-dashboards
       sudo systemctl start opensearch-dashboards
+      # Now install elasticdump to dump and restore indexes
+      sudo apt install nodejs npm
+      sudo npm install n -g
+      sudo n latest
+      sudo npm install elasticdump -g
+      elasticdump --version
     path: /usr/local/sbin/07-add-opensearch.bash
     owner: root:root
     permissions: '0775'
@@ -248,3 +254,4 @@ packages:
   - libncurses5
   - libtinfo5
   - httpie
+  - npm

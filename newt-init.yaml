@@ -58,6 +58,45 @@
 write_files:
   - content: |
       #!/bin/bash
+      cat <<EOT
+    
+      Weclome to the Newt Machine. You can
+      access if with
+    
+          multipass shell newt-machine
+    
+      You can then run one or more additional
+      configuration scripts to add additional
+      software for development.
+    
+        00-menu-of-scripts.bash (displays this help page)
+        01-setup-scripts.bash
+        02-add-python-packages.bash
+        03-add-go-and-caltechlibrary-tools.bash
+        04-ghcup-install.bash
+        05-pandoc-build.bash
+        06-postgrest-build.bash
+        07-add-opensearch.bash
+        08-add-solr.bash
+    
+      The first and second ones are needed for
+      Newt Projects. The rest are optional
+    
+      You can grant yourself SSH access with the following
+      command when you connect using multipass shell.
+    
+         ssh-keygen
+             curl -L -o - https://github.com/${USER}.keys \
+                          >>.ssh/authorized_keys
+    
+      This is handy so you can setup port forward for local
+      services like.
+      EOT    
+    path: /usr/local/sbin/00-menu-of-scripts.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
       mkdir -p $HOME/bin
       mkdir -p $HOME/sbin
       echo "Setting up SSH access to $(HOSTNAME)"
@@ -150,7 +189,7 @@ write_files:
       #!/bin/bash
       cd
       git clone https://github.com/PostgREST/postgrest src/postgrest
-      cd src/postgres 
+      cd src/postgrest
       stack build --install-ghc --copy-bins --local-bin-path $HOME/bin
       cd
     path: /usr/local/sbin/06-postgrest-build.bash
