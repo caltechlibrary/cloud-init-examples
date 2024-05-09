@@ -1,0 +1,213 @@
+#cloud-config
+#
+# flatpak-init.yaml provides a development environemt for building
+# flatpak distributable applications. 
+#
+# ~~~
+# multipass launch --name flatpak-dev \
+#                  --memory 4G \
+#                  --disk 250G \
+#                  --cloud-init flatpak-init.yaml
+# ~~~
+#
+# When you're done you can stop the VM with
+#
+# ~~~
+# multipass stop flatpak-dev
+# ~~~
+#
+# You can remove flatpak-dev completely with
+#
+# ~~~
+# multipass stop flatpak-dev
+# multipass delete flatpak-dev
+# multipass purge flatpak-dev
+# ~~~
+#
+write_files:
+  - content: |
+      #!/bin/bash
+      cat <<EOT
+    
+      Weclome to the Flatpak Dev. You can
+      access if with
+    
+          multipass shell flatpak-dev
+    
+      You will need to run the following the first time to you
+      access the shell. This command adds the "remote" flathub 
+      needed by flatpak to do useful things.
+
+         sudo flatpak remote-add --if-not-exists \
+                 flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      The next command needed to build flatpaks is adding an SDK.
+
+         sudo flatpak install flathub org.freedesktop.Platform//23.08 \
+                                 org.freedesktop.Sdk//23.08
+
+      You should now be able to create and build flatpaks that use the
+      Free Desktop SDK.
+
+      You can then run additional configuration scripts to add additional
+      software for development.
+    
+        00-menu-of-scripts.bash (displays this help page)
+        01-setup-scripts.bash (Robert's preferred setup)
+        02-add-python-packages.bash
+        03-add-go-and-caltechlibrary-tools.bash
+        04-ghcup-install.bash
+        05-pandoc-build.bash
+    
+      All are optional. 
+    
+      You can grant yourself SSH access with the following
+      command when you connect using multipass shell.
+    
+         ssh-keygen
+             curl -L -o - https://github.com/${USER}.keys \
+                          >>.ssh/authorized_keys
+    
+      This is handy so you can setup port forward for local
+      services like.
+      EOT    
+    path: /usr/local/sbin/00-menu-of-scripts.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      mkdir -p $HOME/bin
+      mkdir -p $HOME/sbin
+      echo "Setting up SSH access to $(HOSTNAME)"
+      ssh-keygen
+      echo -n "Enter your GitHub username: "
+      read -r GITHUB_USER
+      if [ "${GITHUB_USER}" != "" ]; then
+        curl -L -o - "https://github.com/${GITHUB_USER}.keys" >>.ssh/authorized_keys
+      fi
+      echo 'export PATH="$HOME/bin:$HOME/sbin:$PATH"' >>"${HOME}/.bashrc"
+      IP_ADDRESS=$(hostname -I | cut -d\  -f 1)
+      cat <<EOT
+
+      You have added ${HOME}/bin to the PATH in your .bashrc
+      file. To update the path without logging out and in
+      do
+      
+              . .bashrc
+      
+      If you're running solr you can use SSH on the host system
+      to port forward http:127.0.0.1:8983/solr with
+
+             ssh -L 8983:127.0.0.1:8983 ubuntu@${IP_ADDRESS}
+
+      EOT
+    path: /usr/local/sbin/01-setup-scripts.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      python3 -m pip install idutils
+      python3 -m pip install sqlfluff
+      python3 -m pip install pylint
+      python3 -m pip install progressbar2
+      python3 -m pip install pybtex
+      python3 -m pip install feedgen
+      python3 -m pip install python-dateutil
+      cat <<EOT >$HOME/bin/ws
+      #!/bin/bash
+      echo "Enter Ctlr-c to exit web server"
+      if [ "$1" != "" ]; then
+      	python3 -m http.server "$1"
+      else
+      	python3 -m http.server
+      fi
+      EOT
+      chmod 775 $HOME/bin/ws
+    path: /usr/local/sbin/02-add-python-packages.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      cd
+      sudo snap install go --classic
+      export GOPATH=$HOME
+      mkdir -p "${HOME}/bin"
+      mkdir -p "${HOME}/src/github.com/caltechlibrary"
+      for REPO in irdmtools datatools dataset newt; do
+        cd "${HOME}/src/github.com/caltechlibrary"
+        git clone "https://github.com/caltechlibrary/${REPO}"
+        cd "${REPO}"
+        make
+        make install
+        cd "${HOME}/src/github.com/caltechlibrary"
+      done
+      cd 
+    path: /usr/local/sbin/03-add-go-and-caltechlibrary-tools.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+    path: /usr/local/sbin/04-ghcup-install.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      PATH=$HOME/.ghcup/bin:$PATH
+      export PATH
+      cd
+      git clone https://github.com/jgm/pandoc src/pandoc
+      cd src/pandoc
+      make
+      cp -v $(find . -type f -name pandoc) "${HOME}/bin"
+      cp -v $(find . -type f -name pandoc) "${HOME}/bin/pandoc-server"
+    path: /usr/local/sbin/05-pandoc-build.bash
+    owner: root:root
+    permissions: '0775'
+package_upgrade: true
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, then package_update will be set to true
+#
+# packages may be supplied as a single package name or as a list
+# with the format [<package>, <version>] wherein the specific
+# package version will be installed.
+packages:
+#  - ubuntu-desktop
+  - aptitude
+  - flatpak
+  - flatpak-builder
+  - tmux
+  - micro
+  - vim
+  - emacs
+  - tcsh
+  - build-essential
+  - autotools-dev
+  - autoconf
+  - automake
+  - git
+  - curl
+  - lynx
+  - make
+  - pandoc
+  - pkg-config
+  - libncurses-dev
+  - libffi-dev
+  - libgmp-dev
+  - libncurses5
+  - zlib1g-dev
+  - shellcheck
+  - python3
+  - python3-pip
+  - libffi-dev
+  - libffi6
+  - libgmp-dev
+  - libgmp10
+  - libncurses-dev
+  - libncurses5
+  - libtinfo5
+  - httpie
+  - tree

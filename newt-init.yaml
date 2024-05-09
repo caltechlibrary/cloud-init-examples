@@ -308,7 +308,6 @@ packages:
   - tmux
   - micro
   - vim
-  - vis
   - emacs
   - tcsh
   - build-essential
