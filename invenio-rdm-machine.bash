@@ -3,13 +3,13 @@
 #
 # This script generates a "RDM Machine" using Multipass.
 #
-# Multipass is launching a Ubuntu 20.04 LTS machine (focal) as that
+# Multipass is launching a Ubuntu 22.04 LTS machine (jammy) as that
 # works with the current release of RDM (v11). Not sure the specs for
 # the upcoming v12 release yet (expecting an announcement at 
 # Open Repositories, June, 2024.
 #
 echo "Launch invenio-rdm"
-if ! multipass launch focal \
+if ! multipass launch jammy \
 	--name invenio-rdm \
 	--memory 8G \
 	--disk 150G \
