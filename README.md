@@ -27,6 +27,9 @@ The next set provide the ability to run as a full GUI environment on macOS or Wi
 
 The sizes recognized by `start-vm.bash` are nano, micro, tiny, small, medium, large, xlarge, 2xlarge. See https://aws.amazon.com/ec2/instance-types/t4 for the descriptions used to model these sizes. Look in the T4g section of the table
 
+`rdm-machine.bash`
+: This will create a local development VM using Multipass for test purposes.  It is set to 8Gb RAM and 150GB disk, 2 CPU. This is too small for a real
+production machine but a 32Gb RAM is larger than some of our development boxes have.
 
 Multipass
 ---------

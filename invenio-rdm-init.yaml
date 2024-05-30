@@ -1,7 +1,13 @@
 #cloud-config
+# Updated to match requirements to install RDM
 package_update: true
 package_upgrade: true
 fqdn: invenio-rdm.local
+api:
+  preserve_sources_list: false
+  sources:
+    deadsnakes-ppa:
+      source: ppa:deadsnakes/ppa
 packages:
   - sshfs
   - build-essential
@@ -9,9 +15,10 @@ packages:
   - lynx
   - tmux
   - curl
-  - python2
+  - python3
   - python3-dev
   - python3-pip
+  - python3-distutils
   - rsync
   - nginx
   - imagemagick
@@ -19,7 +26,7 @@ packages:
   - libxml2-dev
   - libxmlsec1-dev
   - docker.io
-  - docker-compose
+  - docker-compose-v2
   - makepasswd
   - shellcheck
 groups:
@@ -31,3 +38,769 @@ runcmd:
   - adduser ubuntu staff
   - adduser ubuntu www-data
   - [ python3, -m, pip, install, invenio-cli ]
+snap:
+  commands:
+    - snap install --classic certbot
+    - snap install --classic node
+write_files:
+  - content: |
+      #!/bin/bash
+      cat <<EOT
+    
+      Weclome to the RDM Machine. You can access if with
+    
+          multipass shell rdm-machine
+    
+      You can then run the follow script for configuring an
+      RDM instance and development. These are available in
+      /usr/local/bin.  Here is a brief list of the scripts
+      provided with this virtual machine.
+    
+        menu_of_scripts.bash
+        setup_rdm_instance.bash INSTANCE_NAME [RDM_VERSION]
+
+      The last command will create the /Sites directory and 
+      run the invenio-cli commands to create a new instance.
+
+      The following are provided as a convenience. You should run them
+      from your instance installaiton directory.
+
+        invenio_ctl.bash
+        dump_opensearch_indexes.bash
+        restore_opensearch_indexes.bash
+        invenio_sql_backup.bash
+        invenio_sql_restore.bash
+        invenio_sql_command.bash
+        destroy_rdm_containers.bash INSTANCE_NAME
+        destroy_rdm_services.bash INSTANCE_NAME
+    
+      The first one sets up an RDM instance withe given and second ones are needed for
+      RDM Projects. The rest are optional
+    
+      You can grant yourself SSH access with the following
+      command when you connect using multipass shell.
+    
+         ssh-keygen
+             curl -L -o - https://github.com/${USER}.keys \
+                          >>.ssh/authorized_keys
+    
+      This is handy so you can setup port forward for local
+      services like.
+      EOT    
+
+    path: /usr/local/bin/menu_of_scripts.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      # Default stable is currently v11.0,
+      # expecting v12.0rc1 on/after Open Repositories June, 2024
+      RDM_VERSION="v11.0"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME INSTANCE_NAME [VERSION_NO]
+
+        Setup an RDM instance using INSTANCE_NAME in
+        the /Sites directory. If VERSION_NO is provided
+        then that version will be installed using the 
+        usual RDM recipe found at 
+
+           https://inveniordm.docs.cern.ch/install/
+
+      EOT
+        exit 1
+        ;;
+        *)
+        RDM_VERSION="$1"
+      esac
+      cat <<EOT
+        
+        Installing the requires Python packages
+        for ${RDM_VERSION}
+
+      EOT
+      sudo mkdir -p "/Sites"
+      sudo chown $USER "/Sites"
+      sudo chmod 775 "/Sites"
+      cd /Sites
+      python3 -m pip install invenio-cli
+      invenio-cli check-requirements
+      invenio-cli init rdm -c "$RDM_VERSION"
+      read -p "Enter the instance (subdirectory name): " INSTANCE_NAME
+      cd "${INSTANCE_NAME}"
+      invenio-cli check-requirements --development
+      invenio-cli containers start --lock --build --setup
+      invenio-cli install
+      invenio-cli services setup
+      invenio-cli run
+
+    path: /usr/local/bin/setup_rdm_instance.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      
+      APP_NAME=$(basename $0)
+      
+      #
+      # This script can bring invenio-rdm down in an orderly fashion
+      # or start it back up.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % August 17, 2022
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} start|stop
+      
+      # DESCRIPTION
+      
+      Bring invenio-rdm up or down easily. This is a convence script only.
+      It is not terribly bright or robust!
+      
+      # EXAMPLES
+      
+      ~~~shell
+           ${APP_HELP} help
+           ${APP_NAME} stop
+           ${APP_NAME} start
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function start_invenio() {
+        invenio-cli services start
+        sudo systemctl start rdm_celery
+        sudo systemctl start rdm_rest
+        sudo systemctl start rdm
+        sudo systemctl start nginx
+      }
+      
+      function stop_invenio() {
+        sudo systemctl stop nginx
+        sudo systemctl stop rdm
+        sudo systemctl stop rdm_rest
+        sudo systemctl stop rdm_celery
+        invenio-cli services stop
+      }
+      
+      function status_invenio() {
+        invenio-cli services status
+        echo "Press q each status response"
+        sudo systemctl status nginx
+        sudo systemctl status rdm
+        sudo systemctl status rdm_rest
+        sudo systemctl status rdm_celery
+      }
+      
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+        h|help|-h|--help)
+          usage
+          exit 0
+          ;;
+        start)
+          start_invenio
+          ;;
+        stop)
+          stop_invenio
+          ;;
+        status)
+          status_invenio
+          ;;
+        *)
+          usage
+          exit 1
+      esac
+
+    path: /usr/local/bin/invenio_ctl.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script will dump the Open Search indexes.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % August 17, 2022
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} REPO_ID
+      
+      # DESCRIPTION
+      
+      Dump the Opensearch stats indexes for an Invenio RDM instance.
+      This script uses 'elasticdump' which is available from 
+      
+         <https://github.com/elasticsearch-dump/elasticsearch-dump>
+      
+      and runs via npm/NodeJS.
+      
+      # EXAMPLES
+      
+      Backup the Opensearch for caltechdata running on CaltechDATA.
+      
+      ~~~shell
+           sudo -u ubuntu ${APP_NAME} caltechdata
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function backup_opensearch_to() {
+        REPO_ID="$1"
+        CONTAINER="${REPO_ID}_db_1"
+        BACKUP_DIR="$2"
+        #FIXME: Need to figure out how to identify the two indexes we want to backup to get the stats.
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        # We need to operating fetch and backup each index machine the repo name.
+          curl http://localhost:9200/_settings | jq . \
+               | grep "${REPO_ID}" | cut -d \" -f 2 | \
+               grep -v provided_name | sort -u >"${BACKUP_DIR}/opensearch-indexes.txt"
+            
+          while read -r INDEX_NAME; do
+          # Save the index mapping first, then save the data
+            elasticdump \
+              --input "http://localhost:9200/${INDEX_NAME}" \
+              --output "${BACKUP_DIR}/${INDEX_NAME}.mapping.json" \
+              --type mapping
+            gzip --force "${BACKUP_DIR}/${INDEX_NAME}.mapping.json"
+            elasticdump \
+                --input "http://localhost:9200/${INDEX_NAME}" \
+                --output "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                --type data
+            gzip --force "${BACKUP_DIR}/${INDEX_NAME}.data.json"
+          done <"${BACKUP_DIR}/opensearch-indexes.txt"
+      }
+      
+      function run_backups() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        backup_opensearch_to "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        mkdir -p opensearch-dumps
+        run_backups "$1" "opensearch-dumps"
+        ;;
+      esac
+
+    path: /usr/local/bin/dump_opensearch_indexes.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script restores the Open Search indexes previously saved using
+      # the dump_opensearch_index.bash script.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} [PATH_TO_OPENSEARCH_DUMP_DIR]
+      
+      # DESCRIPTION
+      
+      Restore the OpenSearch indexes for an Invenio RDM instance from
+      a opensearch-dump directory. It uses the "opensearch-indexes.txt" for
+      the index list. If you want to only restore some of the index you should
+      edit the "opensearch-indexes.txt" file accordingly.
+      
+      This script uses 'elasticdump' which is available from 
+      
+         <https://github.com/elasticsearch-dump/elasticsearch-dump>
+      
+      and runs via npm/NodeJS.
+      
+      # EXAMPLES
+      
+      Restore the Opensearch for caltechdata running on CaltechDATA.
+      
+      ~~~shell
+        sudo -u ubuntu ${APP_NAME} /storage/OpenSearchBackups
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function restore_opensearch_to() {
+        BACKUP_DIR="$1"
+        #FIXME: Need to figure out how to identify the two indexes we want to backup to get the stats.
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        if [ ! -f "${BACKUP_DIR}/opensearch-indexes.txt" ]; then
+          echo "${BACKUP_DIR}/opensearch-indexes.txt not found, aborting"
+          exit 2
+        fi
+            
+          while read -r INDEX_NAME; do
+          # Retrieve the index mapping first, then the index data
+          if [ -f "${BACKUP_DIR}/${INDEX_NAME}.mapping.json.gz" ]; then
+                gunzip "${BACKUP_DIR}/${INDEX_NAME}.mapping.json.gz"
+                elasticdump \
+                  --input "${BACKUP_DIR}/${INDEX_NAME}.mapping.json" \
+                  --output "http://localhost:9200/${INDEX_NAME}" \
+                  --type mapping
+          fi
+          if [ -f "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz" ]; then
+                gunzip  "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz"
+                elasticdump \
+                    --intput "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                    --output "http://localhost:9200/${INDEX_NAME}" \
+                    --type data
+          fi
+          done <"${BACKUP_DIR}/opensearch-indexes.txt"
+      }
+      
+      function run_restore() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        restore_opensearch_to "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+          if [ "$1" != "" ] && [ -d "$1" ]; then
+            run_restore "$1" 
+        else
+            run_restore "opensearch-dumps"
+          fi
+        ;;
+      esac
+
+    path: /usr/local/bin/restore_opensearch_indexes.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script backs up the SQL data (Postgres) held in the containers.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} CONTAINER_NAME BACKUP_DIR
+      
+      # DESCRIPTION
+      
+      Dump the Postgres databases for CONTAINER_NAME into BACKUP_DIR.
+      CONTAINER_NAME is the name of your Invenio instance and will be
+      used as the prefix to the backup up filename.
+      
+      # EXAMPLES
+      
+      If the instance name was 'caltechauthors' then you can backup
+      the Postgres running in 'caltechauthors_db_1' and write them
+      to '/var/backups/postgres'.
+      
+      ~~~shell
+           ${APP_NAME} caltechauthors /var/backups/postgres
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function backup_postgres_to() {
+        DOCKER="$1"
+        CONTAINER="$2"
+        BACKUP_DIR="$3"
+        if [ "${CONTAINER}" = "" ]; then
+          echo "Missing the container name"
+          exit 1
+        fi
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        BACKUP_FILE="${BACKUP_DIR}/${CONTAINER}-${DB_NAME}-$(date +%Y-%m-%d).sql"
+        $DOCKER container exec \
+          "${CONTAINER}" /usr/bin/pg_dump \
+          --username="${DB_USERNAME}" \
+          --column-inserts \
+          "${DB_NAME}" \
+          >"${BACKUP_FILE}"
+        if [ -f "${BACKUP_FILE}" ]; then
+          gzip "${BACKUP_FILE}"
+        else
+          echo "WARNING: ${BACKUP_FILE} not found!"
+        fi
+      }
+      
+      function run_backups() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        # Source the file "postgres_env.cfg" it contains the
+        # value $DB_USERNAME.
+        if [ -f postgres_env.cfg ]; then
+          . postgres_env.cfg
+        fi
+        if [ "$DB_NAME" = "" ]; then
+          echo "The environment variable DB_NAME is not set."
+          exit 1
+        fi
+        if [ "$DB_USERNAME" = "" ]; then
+          echo "The environment variable DB_USERNAME is not set."
+          exit 1
+        fi
+      
+        DOCKER="/usr/bin/docker"
+        if [ ! -f "${DOCKER}" ]; then
+          DOCKER=$(which docker)
+        fi
+        if [ "${DOCKER}" = "" ]; then
+          echo "Cannot find docker program, aborting"
+          exit 1
+        fi
+        backup_postgres_to "$DOCKER" "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        run_backups "$1" "$2"
+        ;;
+      esac
+
+    path: /usr/local/bin/invenio_sql_backup.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script can bring invenio-rdm down in an orderly fashion
+      # or start it back up.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} CONTAINER_NAME BACKUP_NAME
+      
+      # DESCRIPTION
+      
+      Restore the Postgres databases for CONTAINER_NAME from BACKUP_NAME.
+      CONTAINER_NAME is the name of your Invenio instance and will be
+      used as the prefix to the backup up filename. BACKUP_NAME is the
+      path to your SQL dump file.
+      
+      # EXAMPLES
+      
+      If the instance name was 'caltechauthors' then you can restore
+      the Postgres running in 'caltechdata_db_1' and write them
+      to '/var/backups/postgres/caltechdata-dump-2022-09-19.sql'.
+      
+      ~~~shell
+           ${APP_NAME} caltechdata_db_1 /var/backups/postgres/caltechdata-dump-2022-09-19.sql
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function restore_postgres_from() {
+        BACKUP_FILE="$1"
+        DOCKER="$2"
+        CONTAINER="$3"
+        if [ "${CONTAINER}" = "" ]; then
+          echo "Missing the container name"
+          exit 1
+        fi
+        $DOCKER container exec -it "${CONTAINER}" /usr/bin/psql -U "${DB_USERNAME}" --dbname postgres -c "DROP DATABASE IF EXISTS ${DB_NAME}"
+        $DOCKER container exec -it "${CONTAINER}" /usr/bin/psql -U "${DB_USERNAME}" --dbname postgres -c "CREATE DATABASE ${DB_NAME}"
+        $DOCKER container exec /usr/bin/createdb -U "${DB_USERNAME}" "${DB_NAME}"
+         cat "${BACKUP_FILE}" | $DOCKER container exec \
+           -i "${CONTAINER}" /usr/bin/psql \
+           --username="${DB_USERNAME}" \
+           "${DB_NAME}"
+      }
+      
+      function run_restore() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        # Source the file "postgres_env.cfg" it contains the
+        # value $DB_USERNAME.
+        if [ -f postgres_env.cfg ]; then
+          . postgres_env.cfg
+        fi
+        if [ "$DB_NAME" = "" ]; then
+          echo "The environment variable DB_NAME is not set."
+          exit 1
+        fi
+        if [ "$DB_USERNAME" = "" ]; then
+          echo "The environment variable DB_USERNAME is not set."
+          exit 1
+        fi
+      
+        DOCKER="/usr/bin/docker"
+        if [ ! -f "${DOCKER}" ]; then
+          DOCKER=$(which docker)
+        fi
+        if [ "${DOCKER}" = "" ]; then
+          echo "Cannot find docker program, aborting"
+          exit 1
+        fi
+        restore_postgres_from "$2" "$DOCKER" "$1"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        run_restore "$1" "$2"
+        ;;
+      esac
+
+    path: /usr/local/bin/invenio_sql_restore.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script can bring invenio-rdm down in an orderly fashion
+      # or start it back up.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} CONTAINER_NAME SQL_COMMANDS
+      
+      # DESCRIPTION
+      
+      Run SQL in Postgres REPL for CONTAINER_NAME. Note inside the container
+      you don't have very much in the way of editors, etc.  That means this
+      is only useful to interactively type commands and you can't take
+      advantage of the usaul rich functionality of Postgres' REPL where you
+      have a full POSIX environment available.
+      
+      # EXAMPLES
+      
+      Run specific commands via psql inside the containers for an instance of 
+      "caltechauthors". Note the "_db_1" is needed since that is the RDM naming
+      convention.
+      
+      ~~~shell
+        ${APP_NAME} caltechauthors_db_1 '\dt'
+        ${APP_NAME} caltechauthors_db_1 'SELECT json from vocabularies_metadata;'
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function run_command() {
+        DOCKER="$1"
+        CONTAINER="$2"
+        COMMAND="$3"
+        if [ "${CONTAINER}" = "" ]; then
+          echo "Missing the container name"
+          exit 1
+        fi
+        $DOCKER container exec \
+          "${CONTAINER}" /usr/bin/psql \
+          --username="${DB_USERNAME}" \
+          -d "${DB_NAME}" -c "${COMMAND}"
+        }
+      
+      function run_all() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        # Source the file "postgres_env.cfg" it contains the
+        # value $DB_USERNAME.
+        if [ -f postgres_env.cfg ]; then
+          . postgres_env.cfg
+        fi
+        if [ "$DB_NAME" = "" ]; then
+          echo "The environment variable DB_NAME is not set."
+          exit 1
+        fi
+        if [ "$DB_USERNAME" = "" ]; then
+          echo "The environment variable DB_USERNAME is not set."
+          exit 1
+        fi
+      
+        DOCKER="/usr/bin/docker"
+        if [ ! -f "${DOCKER}" ]; then
+          DOCKER=$(which docker)
+        fi
+        if [ "${DOCKER}" = "" ]; then
+          echo "Cannot find docker program, aborting"
+          exit 1
+        fi
+        run_command "$DOCKER" "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        run_all "$1" "$2"
+        ;;
+      esac
+
+    path: /usr/local/bin/invenio_sql_command.bash
+    owner: 'root:root'
+    permissions: '0775'
