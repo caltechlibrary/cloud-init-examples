@@ -3,11 +3,11 @@
 package_update: true
 package_upgrade: true
 fqdn: invenio-rdm.local
-api:
-  preserve_sources_list: false
-  sources:
-    deadsnakes-ppa:
-      source: ppa:deadsnakes/ppa
+### api:
+###   preserve_sources_list: false
+###   sources:
+###     deadsnakes-ppa:
+###       source: ppa:deadsnakes/ppa
 packages:
   - sshfs
   - build-essential
@@ -15,11 +15,7 @@ packages:
   - lynx
   - tmux
   - curl
-  - python3
-  - python3-pip
-  - python3.9-dev
-  - python3.9-distutils
-  - nodejs
+  - software-properties-common
   - rsync
   - nginx
   - imagemagick
@@ -30,6 +26,7 @@ packages:
   - docker-compose-v2
   - makepasswd
   - shellcheck
+  - jq
 groups:
   - docker
   - staff
@@ -38,11 +35,10 @@ runcmd:
   - adduser ubuntu docker
   - adduser ubuntu staff
   - adduser ubuntu www-data
-  - [ python3, -m, pip, install, invenio-cli ]
+  - /usr/local/bin/install_rdm_python.bash
 snap:
   commands:
     - snap install --classic certbot
-    - snap install --classic node
 write_files:
   - content: |
       #!/bin/bash
@@ -52,31 +48,33 @@ write_files:
     
           multipass shell rdm-machine
     
-      You can then run the follow script for configuring an
-      RDM instance and development. These are available in
-      /usr/local/bin.  Here is a brief list of the scripts
-      provided with this virtual machine.
+      The following scripts are available and installed in
+      /usr/local/bin.
     
+        # Display a list of scripts provided with this build
         menu_of_scripts.bash
-        setup_rdm_instance.bash INSTANCE_NAME [RDM_VERSION]
 
-      The last command will create the /Sites directory and 
-      run the invenio-cli commands to create a new instance.
+        # These are sued to prep the VM
+        install_rdm_python.bash
+        install_rdm_nvm.bash
+        install_rdm_node.bash
 
-      The following are provided as a convenience. You should run them
-      from your instance installaiton directory.
+        # These setup RDM in various flavors
+        setup_rdm_caltechauthors.bash
+        setup_rdm_caltechdata.bash
+        setup_rdm_instance.bash [RDM_VERSION]
 
+        # Utility functions for development and testing
         invenio_ctl.bash
-        dump_opensearch_indexes.bash
-        restore_opensearch_indexes.bash
+        opensearch_indexes_dump.bash
+        opensearch_indexes_restore.bash
         invenio_sql_backup.bash
         invenio_sql_restore.bash
         invenio_sql_command.bash
-        destroy_rdm_containers.bash INSTANCE_NAME
-        destroy_rdm_services.bash INSTANCE_NAME
     
-      The first one sets up an RDM instance withe given and second ones are needed for
-      RDM Projects. The rest are optional
+      The first one displays this list. The next bunch are running
+      to setup the environment and install an instance of RDM.
+      The rest are provided as a convienence.
     
       You can grant yourself SSH access with the following
       command when you connect using multipass shell.
@@ -90,6 +88,86 @@ write_files:
       EOT    
 
     path: /usr/local/bin/menu_of_scripts.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      RDM_VERSION="v11.0"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+      
+        Install Python 3.9 neeeded by RDM.
+      
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Install Python 3.9 required for RDM deployment and development
+      sudo apt update
+      sudo add-apt-repository --yes ppa:deadsnakes/ppa
+      sudo apt update
+      sudo apt -y install python3-pip python3.9 python3.9-dev python3.9-distutils
+      python3.9 -m pip install invenio-cli
+
+    path: /usr/local/bin/install_rdm_python.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Install NodeJS 16.x via nvm.
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Now we need NodeJS 16.x and we can install that using nvm (Node version manager)
+      echo "User is set to $USER home is $HOME"
+      cd $HOME
+      if [ ! -d "$HOME/.nvm" ]; then git clone https://github.com/nvm-sh/nvm "$HOME/.nvm"; fi
+      cd $HOME/.nvm
+      NVM_VERSION="v$(jq -r .version package)"
+      git checkout $NVM_VERSION
+      echo "Installing nvm version ${NVM_VERSION}"
+      ./install.sh
+    path: /usr/local/bin/install_rdm_nvm.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      NVM_VERSION=$(nvm --version)
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Install NodeJS 16.x via nvm version ${NVM_VERSION}.
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Now we need NodeJS 16.x and we can install that using nvm (Node version manager)
+      echo "User is set to $USER home is $HOME"
+      echo "Installing Node 16.20.2 via nvm version ${NVM_VERSION}"
+      source $HOME/.nvm/nvm.sh
+      nvm install 16.20.2
+    path: /usr/local/bin/install_rdm_node.bash
     owner: 'root:root'
     permissions: '0775'
   - content: |
@@ -115,6 +193,7 @@ write_files:
         ;;
         *)
         RDM_VERSION="$1"
+        ;;
       esac
       cat <<EOT
         
@@ -126,18 +205,147 @@ write_files:
       sudo chown $USER "/Sites"
       sudo chmod 775 "/Sites"
       cd /Sites
-      python3 -m pip install invenio-cli
-      invenio-cli check-requirements
+      echo "Initializing RDM to version ${RDM_VERSION}"
       invenio-cli init rdm -c "$RDM_VERSION"
       read -p "Enter the instance (subdirectory name): " INSTANCE_NAME
       cd "${INSTANCE_NAME}"
       invenio-cli check-requirements --development
       invenio-cli containers start --lock --build --setup
       invenio-cli install
-      invenio-cli services setup
+      invenio-cli services setup --no-data
       invenio-cli run
 
     path: /usr/local/bin/setup_rdm_instance.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      # This script retrieves the https://github.com/caltechlibrary/caltechauthors
+      # and sets up a test version of CaltechAUTHORS.
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Setup a test version of CaltechAUTHORS without any
+        data. This is installed in the /Sites/caltechauthors 
+        directory of your Multipass VM. NOTE: The S3 bucket
+        and DataCite integration is skipped in the Multipass
+        VM setup. See <https://github.com/caltechlibrary/caltechauthors>
+        README.md for details as to how to implement that.
+      
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      sudo mkdir -p "/Sites"
+      sudo chown $USER "/Sites"
+      sudo chmod 775 "/Sites"
+      cd /Sites
+      git clone https://github.com/caltechlibrary/caltechauthors
+      cd /Sites
+      echo 'Clone citeproc-py'
+      git clone https://github.com/caltechlibrary/citeproc-py.git
+      cd /Sites/caltechauthors
+      invenio-cli packages install ../citeproc-py
+      cd /Sites
+      echo 'Cloning Caltech Library copy of idutils (authors branch)'
+      git clone https://github.com/caltechlibrary/idutils
+      cd idutils      
+      git checkout authors
+      cd /Sites/caltechauthors
+      pipenv install
+      invenio-cli packages install ../idutils
+      invenio-cli services setup --no-demo-data
+      cd /Sites
+      echo 'Cloning invenio-rdm-records (new-authors branch)'
+      git clone https://github.com/caltechlibrary/invenio-rdm-records
+      cd /Sites/invenio-rdm-records
+      git checkout new-authors
+      cd /Sites
+      echo 'Cloning invenio-communities (authors branch)'
+      git clone https://github.com/caltechlibrary/invenio-communities
+      cd /Sites/invenio-rdm-communities
+      git checkout authors
+      cd /Sites
+      echo 'Cloning invenio-app (authors branch)'
+      git clone https://github.com/caltechlibrary/invenio-app-rdm
+      cd /Sites/invenio-app-rdm
+      git checkout authors
+      cd /Sites/caltechauthors
+      # NOTE: Skipping S3 setup for Multipass development configuration
+      ### echo "Creating an environment file"
+      ### read -p 'Enter DataCite Password: ' INVENIO_DATACITE_PASSWORD
+      ### read -p 'Enter Secret Key: ' INVENIO_SECRET_KEY
+      ### read -p 'Enter S3 Access Key ID: ' INVENIO_S3_ACCESS_KEY_ID
+      ### read -p 'Enter RDM Logging level: ' INVENIO_LOGGING_CONSOLE_LEVEL
+      ### read -p 'Enter RDM Mail password: ' INVENIO_MAIL_PASSWORD
+      ### echo "Writing /Sites/caltechauthors/.env file"
+      ### cat <<EOT >/Sites/caltechauthors/.env
+      ### INVENIO_DATACITE_PASSWORD="${INVENIO_DATACITE_PASSWORD}"
+      ### INVENIO_SECRET_KEY="${INVENIO_SECRET_KEY}"
+      ### INVENIO_S3_ACCESS_KEY_ID="${INVENIO_S3_ACCESS_KEY_ID}"
+      ### INVENIO_S3_SECRET_ACCESS_KEY="${INVENIO_S3_SECRET_ACCESS_KEY}"
+      ### INVENIO_LOGGING_CONSOLE_LEVEL="${INVENIO_LOGGING_CONSOLE_LEVEL}"
+      ### INVENIO_MAIL_PASSWORD="${INVENIO_MAIL_PASSWORD}"
+      ### EOT
+      ### pipenv run invenio files location s3-default s3://caltechauthors --default
+      echo 'Setting up vm.max_map_count in /etc/sysctl.conf'
+      sudo sed -E 's/^vm.max_map_count/#vm.max_map_count/' --in-place=.bak /etc/sysctl.conf
+      sudo cp -p /etc/sysctl.conf /etc/sysctl.conf.bak2
+      cat <<EOT | sudo ed /etc/sysctl.conf
+      $
+      a
+      vm.max_map_count=262144
+      .
+      wq
+      EOT
+      cd /Sites/caltechauthors
+      echo 'Getting the latest ROR data'
+      wget https://zenodo.org/record/7038913/files/v1.5-2022-08-31-ror-data.zip?download=1 -O ror.zip 
+      pipenv run invenio vocabularies import --vocabulary funders --origin "/Sites/caltechauthors/ror.zip"
+      pipenv run invenio vocabularies import --vocabulary awards --filepath ./vocabularies-future.yaml
+      pipenv run invenio vocabularies import --vocabulary names --filepath ./vocabularies-future.yaml
+      sudo cp -vp /Sites/caltechauthors/nginx.conf /etc/nginx/sites-enabled/default
+      sudo cp -vp /Sites/caltechauthors/redirect-map.conf /etc/nginx/
+      # NOTE: We're running a localhost VM so don't need the certbot cert
+      #sudo certbot --nginx
+      sudo service nginx restart
+      sudo cp -vp /Sites/caltechauthors/rdm_rest.service /etc/systemd/system/.
+      sudo cp -vp /Sites/caltechauthors/rdm.service /etc/systemd/system/.
+      sudo cp -vp /Sites/caltechauthors/rdm_celery.service /etc/systemd/system/.
+      cat <<EOT
+         Bring up RDM with the following commands
+
+           invenio-cli services start
+           sudo systemctl daemon-reload
+           sudo systemctl start rdm
+           sudo systemctl start rdm_rest
+           sudo systemctl start rdm_celery
+
+        Development instance should be setup. 
+
+        NOTE: S3, DataCite, certbot integration skipped.
+              See <https://github.com/caltechlibrary/caltechauthors> 
+              for more details.
+      
+      EOT
+    path: /usr/local/bin/setup_rdm_caltechauthors.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      cat <<EOT
+        usage: ${APP_NAME} 
+
+        This is not implemented yet.
+      EOT
+      exit 1
+    path: /usr/local/bin/setup_rdm_caltechdata.bash
     owner: 'root:root'
     permissions: '0775'
   - content: |
@@ -227,6 +435,7 @@ write_files:
         *)
           usage
           exit 1
+          ;;
       esac
 
     path: /usr/local/bin/invenio_ctl.bash
@@ -336,7 +545,7 @@ write_files:
         ;;
       esac
 
-    path: /usr/local/bin/dump_opensearch_indexes.bash
+    path: /usr/local/bin/opensearch_indexes_dump.bash
     owner: 'root:root'
     permissions: '0775'
   - content: |
@@ -453,7 +662,7 @@ write_files:
         ;;
       esac
 
-    path: /usr/local/bin/restore_opensearch_indexes.bash
+    path: /usr/local/bin/opensearch_indexes_restore.bash
     owner: 'root:root'
     permissions: '0775'
   - content: |
