@@ -10,7 +10,7 @@
 #
 echo "Launch search-machine"
 multipass launch jammy \
-	-vvvv \
+	-vv \
 	--cpus 2 \
 	--memory 4G \
 	--name search-machine \
