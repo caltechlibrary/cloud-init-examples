@@ -9,7 +9,7 @@
 	"releaseNotes": "add invenio-rdm-machine.bash, updated invenio-rdm-init.yaml",
     "issueTracker": "https://github.com/caltechlibrary/cloud-init-examples/issues",
     "name": "cloud-init-examples",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "description": "This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.",
     "developmentStatus": "concept",
     "programmingLanguage": [
