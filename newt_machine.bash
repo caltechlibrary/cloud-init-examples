@@ -9,7 +9,7 @@ multipass launch \
 	--memory 4G \
 	--disk 150G \
 	--cpus 2 \
-	--cloud-init newt-init.yaml
+	--cloud-init newt-machine.yaml
 multipass info newt-machine
 NEWT_IP_ADDRESS=$(multipass list | grep newt-machine | cut -c 43-58)
 cat <<EOT

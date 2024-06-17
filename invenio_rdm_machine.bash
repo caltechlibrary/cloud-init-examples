@@ -10,39 +10,39 @@
 #
 echo "Launch invenio-rdm"
 if ! multipass launch jammy \
-	--verbose \
-	--name invenio-rdm \
-	--memory 8G \
-	--disk 150G \
-	--cpus 2 \
-	--cloud-init invenio-rdm-init.yaml; then
-	echo
-	echo "Failed to create invenio-rdm."
-	echo
-	exit 1
+    --verbose \
+    --name invenio-rdm \
+    --memory 8G \
+    --disk 150G \
+    --cpus 2 \
+    --cloud-init invenio-rdm.yaml; then
+    echo
+    echo "Failed to create invenio-rdm."
+    echo
+    exit 1
 fi
 if ! multipass info invenio-rdm; then
-	echo
-	echo 'failed to create invenio-rdm, aborting'
-	echo
-	exit 1
+    echo
+    echo 'failed to create invenio-rdm, aborting'
+    echo
+    exit 1
 fi
 if ! multipass exec invenio-rdm -- /usr/local/bin/install_rdm_nvm.bash; then
-	echo
-	echo 'WARNING: failed to to install nvm'
-	echo 'Access your VM and run /usr/local/bin/install_rdm_nvm.bash'
-	echo 'Access your VM and run /usr/local/bin/install_rdm_node.bash'
-	echo
+    echo
+    echo 'WARNING: failed to to install nvm'
+    echo 'Access your VM and run /usr/local/bin/install_rdm_nvm.bash'
+    echo 'Access your VM and run /usr/local/bin/install_rdm_node.bash'
+    echo
 elif ! multipass exec invenio-rdm -- /usr/local/bin/install_rdm_node.bash; then
-	echo
-	echo 'WARNING: failed to to install, nvm, nodejs and npm'
-	echo 'Access your VM and run /usr/local/bin/install_rdm_node.bash'
-	echo
+    echo
+    echo 'WARNING: failed to to install, nvm, nodejs and npm'
+    echo 'Access your VM and run /usr/local/bin/install_rdm_node.bash'
+    echo
 elif ! multipass restart invenio-rdm; then
-	# Finally we need to restart the machine. 
-	echo
-	echo 'WARNING: restart failed, check logs on VM restart'
-	echo
+    # Finally we need to restart the machine. 
+    echo
+    echo 'WARNING: restart failed, check logs on VM restart'
+    echo
 fi
 RDM_IP_ADDRESS=$(multipass list | grep invenio-rdm | cut -c 43-58)
 cat <<EOT
@@ -66,21 +66,6 @@ cat <<EOT
   scripts run
 
     menu_of_scripts.bash
-
-  Example deploying an RDM instance
-
-    setup_rdm_caltechauthors.bash
-	setup_rdm_caltechdata.bash
-	setup_rdm_instance.bash [RDM_VERSION]
-
-  Example scripts available include
-
-    invenio_ctl.bash
-    opensearch_indexes_dump.bash
-    opensearch_indexes_restore.bash
-    invenio_sql_backup.bash
-    invenio_sql_restore.bash
-    invenio_sql_command.bash
 
   You can grant yourself SSH access with the following
   command when you connect using multipass shell.

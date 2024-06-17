@@ -125,8 +125,13 @@ if multipass list | grep "$MACHINE" >/dev/null; then
 else 
     CLOUD_INIT="$MACHINE-local.yaml"
     if [ ! -f "$CLOUD_INIT" ]; then
-        CLOUD_INIT="$MACHINE-init.yaml"
-    fi
+		# Handle the transition from machine name "-init.yaml" to machine name dot yaml
+		if [ -f "${MACHINE}-init.yaml" ]; then
+        	CLOUD_INIT="${MACHINE}-init.yaml"
+		else
+			CLOUD_INIT="${MACHINE}.yaml"
+    	fi
+	fi
     echo "Launching $MACHINE";
     multipass -v launch \
 		--name "${MACHINE}" \

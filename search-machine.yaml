@@ -5,12 +5,13 @@ package_upgrade: true
 fqdn: search-machine.local
 packages:
   - sshfs
+  - docker-compose
+  - docker.io
   - build-essential
   - git
   - lynx
   - tmux
   - curl
-  - software-properties-common
   - rsync
   - nginx
   - imagemagick
@@ -23,8 +24,6 @@ packages:
   - tree
   - zip
   - unzip
-  - docker-compose
-  - docker.io
 groups:
   - staff
   - www-data

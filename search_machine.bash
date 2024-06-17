@@ -14,13 +14,8 @@ multipass launch jammy \
 	--cpus 2 \
 	--memory 4G \
 	--name search-machine \
-	--cloud-init search-init.yaml
-if ! multipass info search-machine; then
-	echo
-	echo 'failed multipass info, aborting'
-	echo
-	exit 1
-fi
+	--cloud-init search-machine.yaml
+echo "Restarting VM"
 if ! multipass restart search-machine; then
 	echo
 	echo 'failed multipass restart, aborting'

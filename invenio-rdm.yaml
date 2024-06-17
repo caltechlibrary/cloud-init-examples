@@ -46,7 +46,7 @@ write_files:
     
       Weclome to the RDM Machine. You can access if with
     
-          multipass shell rdm-machine
+          multipass shell invenio-rdm
     
       The following scripts are available and installed in
       /usr/local/bin.
@@ -54,12 +54,14 @@ write_files:
         # Display a list of scripts provided with this build
         menu_of_scripts.bash
 
-        # These are sued to prep the VM
+        # These are used to prep the VM, they are fun by
+        # invenio_rdm_machine.bash after the VM launches.
         install_rdm_python.bash
         install_rdm_nvm.bash
         install_rdm_node.bash
 
-        # These setup RDM in various flavors
+        # These setup RDM in various flavors. You run these
+        # from VM to finish setup
         setup_rdm_caltechauthors.bash
         setup_rdm_caltechdata.bash
         setup_rdm_instance.bash [RDM_VERSION]
@@ -133,7 +135,7 @@ write_files:
         *)
         ;;
       esac
-      # Now we need NodeJS 16.x and we can install that using nvm (Node version manager)
+      # Now we need NodeJS 15.x and we can install that using nvm (Node version manager)
       echo "User is set to $USER home is $HOME"
       cd $HOME
       if [ ! -d "$HOME/.nvm" ]; then git clone https://github.com/nvm-sh/nvm "$HOME/.nvm"; fi
@@ -162,11 +164,11 @@ write_files:
         *)
         ;;
       esac
-      # Now we need NodeJS 16.x and we can install that using nvm (Node version manager)
+      # Now we need NodeJS 16.20.2 is the LTS but RDM wants npm v7 which last used with 16.10.0
       echo "User is set to $USER home is $HOME"
-      echo "Installing Node 16.20.2 via nvm version ${NVM_VERSION}"
+      echo "Installing Node 16.10.0 via nvm version ${NVM_VERSION}"
       source $HOME/.nvm/nvm.sh
-      nvm install 16.20.2
+      nvm install 16.10.0
     path: /usr/local/bin/install_rdm_node.bash
     owner: 'root:root'
     permissions: '0775'
