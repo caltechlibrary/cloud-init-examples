@@ -54,8 +54,8 @@ write_files:
         # Display a list of scripts provided with this build
         menu_of_scripts.bash
 
-        # These are used to prep the VM, they are fun by
-        # invenio_rdm_machine.bash after the VM launches.
+        # These were used to prep the VM by invenio_rdm_machine.bash
+        # after the first VM launch.
         install_rdm_python.bash
         install_rdm_nvm.bash
         install_rdm_node.bash
@@ -64,7 +64,7 @@ write_files:
         # from VM to finish setup
         setup_rdm_caltechauthors.bash
         setup_rdm_caltechdata.bash
-        setup_rdm_instance.bash [RDM_VERSION]
+        setup_rdm_instance.bash INSTANCE_NAME [RDM_VERSION]
 
         # Utility functions for development and testing
         invenio_ctl.bash
@@ -114,7 +114,10 @@ write_files:
       sudo add-apt-repository --yes ppa:deadsnakes/ppa
       sudo apt update
       sudo apt -y install python3-pip python3.9 python3.9-dev python3.9-distutils
+      sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.9 0
+      sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 0
       python3.9 -m pip install invenio-cli
+      python3.9 -m pip install --use-pep517
 
     path: /usr/local/bin/install_rdm_python.bash
     owner: 'root:root'
@@ -175,47 +178,116 @@ write_files:
   - content: |
       #!/bin/bash
       APP_NAME="$(basename "$0")"
-      # Default stable is currently v11.0,
-      # expecting v12.0rc1 on/after Open Repositories June, 2024
+      # Default short term stable release is currently v11.0,
+      # expecting v12.0 on/after Open Repositories June, 2024
       RDM_VERSION="v11.0"
-      case "$1" in
-        -h|-help|--help|help)
-        cat <<EOT
-        USAGE: $APP_NAME INSTANCE_NAME [VERSION_NO]
-
-        Setup an RDM instance using INSTANCE_NAME in
-        the /Sites directory. If VERSION_NO is provided
-        then that version will be installed using the 
-        usual RDM recipe found at 
-
-           https://inveniordm.docs.cern.ch/install/
-
+      for ARG in $@; do
+        case "${ARG}" in
+          -h|-help|--help|help)
+          cat <<EOT
+          USAGE: $APP_NAME INSTANCE_NAME [VERSION_NO]
+  
+          Setup an RDM instance using INSTANCE_NAME in
+          the /Sites directory. If VERSION_NO is provided
+          then that version will be installed using the 
+          usual RDM recipe found at 
+  
+             https://inveniordm.docs.cern.ch/install/
+  
       EOT
+          exit 1
+          ;;
+          *)
+          if [ "${INSTANCE_NAME}" = "" ]; then
+            INSTANCE_NAME="${ARG}"
+          else
+            RDM_VERSION="${ARG}"
+          fi
+          ;;
+        esac
+      done
+      # Make sure we have our instance name and rdm version number.
+      if [ "${INSTANCE_NAME}" = "" ]; then
+        echo "Missing instance names, aborting"
         exit 1
-        ;;
-        *)
-        RDM_VERSION="$1"
-        ;;
-      esac
+      fi
+      if [ "${RDM_VERSION}" = "" ]; then
+        echo "Missing rdm version for instance named ${INSTANCE_NAME}, aborting"
+        exit 1
+      fi
       cat <<EOT
         
         Installing the requires Python packages
-        for ${RDM_VERSION}
+        for ${INSTANCE_NAME} rdm version ${RDM_VERSION}
 
       EOT
-      sudo mkdir -p "/Sites"
-      sudo chown $USER "/Sites"
-      sudo chmod 775 "/Sites"
+      sudo mkdir -p /Sites
+      sudo chown $USER /Sites
+      sudo chmod 775 /Sites
       cd /Sites
+      echo "Setting initialization defaults"
+      cat <<EOT >"/Sites/${INSTANCE_NAME}_${RDM_VERSION}.toml"
+      [RDM]
+      flavor = RDM
+      logfile = /var/logs/invenio-cli.log
+      
+      [cookiecutter]
+      project_name = ${INSTANCE_NAME}
+      project_shortname = ${INSTANCE_NAME}
+      package_name = ${INSTANCE_NAME}
+      project_site = ${INSTANCE_NAME}.local
+      github_repo = caltechlibrary/${INSTANCE_NAME}
+      description = ${INSTANCE_NAME} InvenioRDM Instance
+      author_name = Caltech Library
+      author_email = library@caltech.edu
+      year = $(date +%Y)
+      database = postgresql
+      search = opensearch2
+      file_storage = local
+      development_tools = yes
+      site_code = yes
+      _template = https://github.com/inveniosoftware/cookiecutter-invenio-rdm.git
+      EOT
+
       echo "Initializing RDM to version ${RDM_VERSION}"
-      invenio-cli init rdm -c "$RDM_VERSION"
-      read -p "Enter the instance (subdirectory name): " INSTANCE_NAME
-      cd "${INSTANCE_NAME}"
-      invenio-cli check-requirements --development
-      invenio-cli containers start --lock --build --setup
-      invenio-cli install
-      invenio-cli services setup --no-data
-      invenio-cli run
+      echo "in /Sites/${INSTANCE_NAME}"
+      if invenio-cli init rdm -c "$RDM_VERSION" --config "${INSTANCE_NAME}_${RDM_VERSION}.toml"; then
+        echo "completed: invenio-cli init rdm -c $RDM_VERSION --config ${INSTANCE_NAME}_${RDM_VERSION}.tmpl"
+      else
+        echo "failed to complete: invenio-cli init rdm -c $RDM_VERSION --config ${INSTANCE_NAME}_${RDM_VERSION}.tmpl"
+        exit 1
+      fi
+      cd "/Sites/${INSTANCE_NAME}"
+      if invenio-cli check-requirements --development; then
+        echo "completed: invenio-cli check-requirements --development"
+      else
+        echo "failed to complete: invenio-cli check-requirements --development"
+        exit 1
+      fi
+      if invenio-cli containers start --lock --build --setup; then
+        echo "completed: invenio-cli containers start --lock --build --setup"
+      else
+        echo "failed to complete: invenio-cli containers start --lock --build --setup"
+        exit 1
+      fi
+      if invenio-cli install; then
+        echo "completed: invenio-cli install"
+      else
+        echo "failed to complete: invenio-cli install"
+        exit 1
+      fi
+      if invenio-cli services setup --no-demo-data; then
+        echo "completed: invenio-cli services setup --non-demo-data"
+      else
+        echo "failed to complete: invenio-cli services setup --non-demo-data"
+        exit 1
+      fi
+      if invenio-cli run; then
+        echo "completed: invenio-cli run"
+      else
+        echo "failed to complete: invenio-cli run"
+        exit 1
+      fi
 
     path: /usr/local/bin/setup_rdm_instance.bash
     owner: 'root:root'
