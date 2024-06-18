@@ -262,18 +262,13 @@ write_files:
         exit 1
       fi
       cd "/Sites/${INSTANCE_NAME}"
+      # There is a bug in the Pipefile, I need to fix line 11
+      echo "Fixing broken Pipfile, /Sites/${INSTANCE_NAME}/Pipfile"
+      sed -i.bak -E 's/editable="True",/editable=true,/g' "/Sites/${INSTANCE_NAME}/Pipfile"
       if invenio-cli check-requirements --development; then
         echo "completed: invenio-cli check-requirements --development"
       else
         echo "failed to complete: invenio-cli check-requirements --development"
-        exit 1
-      fi
-      # There is a bug in the Pipefile, I need to fix line 11
-      sed -E 's/editable="True",/editable=true,/gc' -i .bak "/Sites/${INSTANCE_NAME}/Pipfile"
-      if invenio-cli containers start --lock --build --setup; then
-        echo "completed: invenio-cli containers start --lock --build --setup"
-      else
-        echo "failed to complete: invenio-cli containers start --lock --build --setup"
         exit 1
       fi
       if invenio-cli install; then
@@ -288,12 +283,75 @@ write_files:
         echo "failed to complete: invenio-cli services setup --non-demo-data"
         exit 1
       fi
-      if invenio-cli run; then
-        echo "completed: invenio-cli run"
-      else
-        echo "failed to complete: invenio-cli run"
-        exit 1
-      fi
+      echo "Setting up systemd service support"
+      cat <<EOT >rdm.service
+      [Unit]
+      Description=Launch InvenioRDM Web Interface
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=kmsg
+      StandardError=kmsg
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/usr/local/bin/pipenv run uwsgi --logger syslog:inveniordm_ui uwsgi_ui.ini
+
+      [Install]
+      WantedBy=multi-user.targe
+      EOT
+      cat <<EOT >rdm_celery.service
+      [Unit]
+      Description=Launch InvenioRDM Celery Task
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=kmsg
+      StandardError=kmsg
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/usr/local/bin/pipenv run celery --app invenio_app.celery worker --beat --events --loglevel INFO
+
+      [Install]
+      WantedBy=multi-user.target
+
+      EOT
+      cat <<EOT >rdm_rest.service
+      [Unit]
+      Description=Launch InvenioRDM Web Interface
+      
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=kmsg
+      StandardError=kmsg
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/usr/local/bin/pipenv run uwsgi --logger syslog:inveniordm_rest uwsgi_rest.ini
+      
+      [Install]
+      WantedBy=multi-user.target
+      
+      EOT
+      sudo mv -v rdm.service /etc/systemd/system/
+      sudo mv -v rdm_celery.service /etc/systemd/system/
+      sudo mv -v rdm_rest.service /etc/systemd/system/
+      sudo chown root.root /etc/systemd/system/rdm*.service
+      sudo chmod 644 /etc/systemd/system/rdm*.service
+      cat <<EOT
+
+         Ready to start RDM instance ${INSTANCE_NAME}
+
+             multipass shell ${INSTANCE_NAME}
+             cd /Sites/caltechdata
+             invenio-cli services start
+             sudo systemctl start rdm_celery
+             sudo systemctl start rdm_rest
+             sudo systemctl start rdm
+             sudo systemctl start nginx
+
+      EOT
 
     path: /usr/local/bin/setup_rdm_instance.bash
     owner: 'root:root'
