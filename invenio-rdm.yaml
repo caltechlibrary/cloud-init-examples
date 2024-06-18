@@ -44,7 +44,7 @@ write_files:
       #!/bin/bash
       cat <<EOT
     
-      Weclome to the RDM Machine. You can access if with
+      Weclome to the RDM Machine. You can access it with
     
           multipass shell invenio-rdm
     
@@ -95,7 +95,6 @@ write_files:
   - content: |
       #!/bin/bash
       APP_NAME="$(basename "$0")"
-      RDM_VERSION="v11.0"
       case "$1" in
         -h|-help|--help|help)
         cat <<EOT
@@ -130,7 +129,7 @@ write_files:
         cat <<EOT
         USAGE: $APP_NAME
 
-        Install NodeJS 16.x via nvm.
+        Install nvm so I can install NodeJS 16.10.2 via nvm.
 
       EOT
         exit 1
@@ -153,13 +152,18 @@ write_files:
   - content: |
       #!/bin/bash
       APP_NAME="$(basename "$0")"
+      export NVM_DIR="$HOME/.nvm"
+      # This loads nvm
+      [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+      # This loads nvm bash_completion
+      [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
       NVM_VERSION=$(nvm --version)
       case "$1" in
         -h|-help|--help|help)
         cat <<EOT
         USAGE: $APP_NAME
 
-        Install NodeJS 16.x via nvm version ${NVM_VERSION}.
+        Install NodeJS 16.10.2 via nvm version ${NVM_VERSION}.
 
       EOT
         exit 1
@@ -239,7 +243,7 @@ write_files:
       github_repo = caltechlibrary/${INSTANCE_NAME}
       description = ${INSTANCE_NAME} InvenioRDM Instance
       author_name = Caltech Library
-      author_email = library@caltech.edu
+      author_email = help@library.caltech.edu
       year = $(date +%Y)
       database = postgresql
       search = opensearch2
@@ -264,6 +268,8 @@ write_files:
         echo "failed to complete: invenio-cli check-requirements --development"
         exit 1
       fi
+      # There is a bug in the Pipefile, I need to fix line 11
+      sed -E 's/editable="True",/editable=true,/gc' -i .bak "/Sites/${INSTANCE_NAME}/Pipfile"
       if invenio-cli containers start --lock --build --setup; then
         echo "completed: invenio-cli containers start --lock --build --setup"
       else
