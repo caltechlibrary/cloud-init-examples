@@ -142,7 +142,7 @@ write_files:
       cd $HOME
       if [ ! -d "$HOME/.nvm" ]; then git clone https://github.com/nvm-sh/nvm "$HOME/.nvm"; fi
       cd $HOME/.nvm
-      NVM_VERSION="v$(jq -r .version package)"
+      NVM_VERSION="v$(jq -r .version package.json)"
       git checkout $NVM_VERSION
       echo "Installing nvm version ${NVM_VERSION}"
       ./install.sh
@@ -278,9 +278,9 @@ write_files:
         exit 1
       fi
       if invenio-cli services setup --no-demo-data; then
-        echo "completed: invenio-cli services setup --non-demo-data"
+        echo "completed: invenio-cli services setup --no-demo-data"
       else
-        echo "failed to complete: invenio-cli services setup --non-demo-data"
+        echo "failed to complete: invenio-cli services setup --no-demo-data"
         exit 1
       fi
       echo "Setting up systemd service support"
