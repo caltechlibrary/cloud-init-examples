@@ -12,6 +12,7 @@ packages:
   - sshfs
   - build-essential
   - git
+  - elinks
   - lynx
   - tmux
   - curl
@@ -283,6 +284,129 @@ write_files:
         echo "failed to complete: invenio-cli services setup --no-demo-data"
         exit 1
       fi
+      echo "Generating ${INSTANCE_NAME}_nginx.conf"
+      cat <<EOT >"${INSTANCE_NAME}_nginx.conf"
+      
+      #include redirect-map.conf;
+      
+      server {
+      
+        server_name ${INSTANCE_NAME}
+      
+        add_header Strict-Transport-Security "max-age=15768000"; # 6 months
+      
+        # Request ID tracing (allows end-to-end tracking of requests for better
+        # troubleshooting)
+        add_header X-Request-ID $request_id;
+      
+        # The request body is sent to the proxied server immediately as it is
+        # received
+        proxy_request_buffering off;
+        # Sets the HTTP protocol v1.1 for proxying in order to not use the buffer
+        # in case of chunked transfer encoding
+        proxy_http_version 1.1;
+      
+        # Proxying to the application server
+        ## UI server
+        location / {
+          uwsgi_pass 127.0.0.1:5000;
+          include uwsgi_params;
+          uwsgi_buffering off;
+          uwsgi_request_buffering off;
+          uwsgi_param Host $host;
+          uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto $scheme;
+          # Pass request id to the ui server
+          uwsgi_param X-Request-ID $request_id;
+          # X-Session-ID / X-User-ID is read by nginx and included in the logs,
+          # however we don't want to expose them to clients so we are hiding them.
+          uwsgi_hide_header X-Session-ID;
+          uwsgi_hide_header X-User-ID;
+          # Max upload size (except for files) is set to 100mb as default.
+          client_max_body_size 100m;
+        }
+        ## Most API
+        location /api {
+          uwsgi_pass 127.0.0.1:5001;
+          include uwsgi_params;
+          uwsgi_buffering off;
+          uwsgi_request_buffering off;
+          uwsgi_param Host $host;
+          uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto $scheme;
+          # Pass request id to the api server
+          uwsgi_param X-Request-ID $request_id;
+          # X-Session-ID / X-User-ID is read by nginx and included in the logs,
+          # however we don't want to expose them to clients so we are hiding them.
+          uwsgi_hide_header X-Session-ID;
+          uwsgi_hide_header X-User-ID;
+          # Max upload size (except for files) is set to 100mb as default.
+          client_max_body_size 100m;
+        }
+        ## API files
+        # Another location is defined in order to allow large file uploads in the files
+        # API without exposing the other parts of the application to receive huge
+        # request bodies.
+        location ~ /api/records/.+/draft/files/.+/content {
+          gzip off;
+          uwsgi_pass 127.0.0.1:5001;
+          include uwsgi_params;
+          uwsgi_buffering off;
+          uwsgi_request_buffering off;
+          uwsgi_param Host $host;
+          uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto $scheme;
+          # Pass request id to api server
+          uwsgi_param X-Request-ID $request_id;
+          # X-Session-ID / X-User-ID is read by nginx and included in the logs,
+          # however we don't want to expose them to clients so we are hiding them.
+          uwsgi_hide_header X-Session-ID;
+          uwsgi_hide_header X-User-ID;
+          # Max upload size for files is set to 500GB (configure as needed).
+          client_max_body_size 500G;
+        }
+        # Static content is served directly by nginx and not the application server.
+        #location /static {
+        #  alias /opt/invenio/var/instance/static;
+        #  autoindex off;
+        #}
+        #Redirect old urls from redirect-map
+        #if ( $redirect_uri ) {
+        #      return 301 $redirect_uri;
+        #}
+      
+      }
+      
+      server {
+          if ($host = ${INSTANCE_NAME}) {
+              return 301 https://$host$request_uri;
+          } # managed by Certbot
+      
+      
+      
+        server_name ${INSTANCE_NAME}
+      
+        add_header Strict-Transport-Security "max-age=15768000";
+          listen 80;
+          return 404; # managed by Certbot
+      
+      
+      }
+      
+      EOT
+      sudo mv -v "${INSTANCE_NAME}_nginx.conf" "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo chown root:root "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo chmod 664 "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo ln "/etc/nginx/sites-available/${INSTANCE_NAME}.conf" "/etc/nginx/sites-enabled/${INSTANCE_NAME}.conf"
+      sudo rm "/etc/nginx/sites-enabled/default"
+      sudo systemctl restart nginx
+      echo "Setting up /etc/sysctl/sysctl.d/rdm_sysctl.conf"
+      cat <<EOT >rdm_sysctl.conf
+      vm.max_map_count=262144
+      EOT
+      sudo mv -v rdm_sysctl.conf /etc/sysctl/sysctl.d/rdm_sysctl.conf
+      sudo chown root.root /etc/sysctl/sysctl.d/rdm_sysctl.conf
+      sudo chmod 644 /etc/sysctl/sysctl.d/rdm_sysctl.conf
       echo "Write environment settings for systemd service support"
       INVENIO_SECRET_KEY="$(makepasswd -char 64)"
       cat <<EOT >.env
