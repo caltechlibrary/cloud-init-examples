@@ -283,6 +283,14 @@ write_files:
         echo "failed to complete: invenio-cli services setup --no-demo-data"
         exit 1
       fi
+      echo "Write environment settings for systemd service support"
+      INVENIO_SECRET_KEY="$(makepasswd -char 64)"
+      cat <<EOT >.env
+      # This is an example of run time environment for developing RDM.
+      INVENIO_SECRET_KEY=${INVENIO_SECRET_KEY}
+      INVENIO_LOGGING_CONSOLE_LEVEL=DEBUG
+      FLASK_ENV=development
+      EOT
       echo "Setting up systemd service support"
       cat <<EOT >rdm.service
       [Unit]
@@ -298,7 +306,7 @@ write_files:
       ExecStart=/usr/local/bin/pipenv run uwsgi --logger syslog:inveniordm_ui uwsgi_ui.ini
 
       [Install]
-      WantedBy=multi-user.targe
+      WantedBy=multi-user.target
       EOT
       cat <<EOT >rdm_celery.service
       [Unit]
@@ -339,17 +347,37 @@ write_files:
       sudo mv -v rdm_rest.service /etc/systemd/system/
       sudo chown root.root /etc/systemd/system/rdm*.service
       sudo chmod 644 /etc/systemd/system/rdm*.service
+      sudo systemctl enable rdm_celery
+      sudo systemctl enable rdm_rest
+      sudo systemctl enable rdm
       cat <<EOT
 
-         Ready to start RDM instance ${INSTANCE_NAME}
+         Starting RDM instance ${INSTANCE_NAME}
 
-             multipass shell ${INSTANCE_NAME}
-             cd /Sites/caltechdata
+             cd /Sites/${INSTANCE_NAME}
              invenio-cli services start
              sudo systemctl start rdm_celery
              sudo systemctl start rdm_rest
              sudo systemctl start rdm
              sudo systemctl start nginx
+
+         Checking RDM instance ${INSTANCE_NAME}
+
+             cd /Sites/${INSTANCE_NAME}
+             invenio-cli services status
+             sudo systemctl status rdm_celery
+             sudo systemctl status rdm_rest
+             sudo systemctl status rdm
+             sudo systemctl status nginx
+
+         Shutdownning down RDM instance ${INSTANCE_NAME}
+
+             cd /Sites/${INSTANCE_NAME}
+             sudo systemctl stop nginx
+             sudo systemctl stop rdm
+             sudo systemctl stop rdm_rest
+             sudo systemctl stop rdm_celery
+             invenio-cli services stop
 
       EOT
 
