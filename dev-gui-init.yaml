@@ -3,12 +3,14 @@ package_update: true
 package_upgrade: true
 fqdn: dev-gui.local
 packages:
+  - aptitude
   - sshfs
   - build-essential
   - git
   - snapcraft
   - autoconf
   - automake
+  - cmake
   - curl
   - wget
   - tmux
@@ -22,12 +24,8 @@ packages:
   - pandoc
   - rsync
   - libexpat1
-  - apache2
-  - apache2-utils
-  - ssl-cert
-  - libapache2-mod-wsgi
-  - ubuntu-desktop
   - xrdp
+  - ubuntu-desktop
   - makepasswd
   - shellcheck
   - aspell
