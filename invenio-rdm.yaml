@@ -313,9 +313,9 @@ write_files:
           include uwsgi_params;
           uwsgi_buffering off;
           uwsgi_request_buffering off;
-          uwsgi_param Host $host;
+          uwsgi_param Host \$host;
           uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
-          uwsgi_param X-Forwarded-Proto $scheme;
+          uwsgi_param X-Forwarded-Proto \$scheme;
           # Pass request id to the ui server
           uwsgi_param X-Request-ID \$request_id;
           # X-Session-ID / X-User-ID is read by nginx and included in the logs,
@@ -331,9 +331,9 @@ write_files:
           include uwsgi_params;
           uwsgi_buffering off;
           uwsgi_request_buffering off;
-          uwsgi_param Host $host;
-          uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
-          uwsgi_param X-Forwarded-Proto $scheme;
+          uwsgi_param Host \$host;
+          uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto \$scheme;
           # Pass request id to the api server
           uwsgi_param X-Request-ID \$request_id;
           # X-Session-ID / X-User-ID is read by nginx and included in the logs,
@@ -353,7 +353,7 @@ write_files:
           include uwsgi_params;
           uwsgi_buffering off;
           uwsgi_request_buffering off;
-          uwsgi_param Host $host;
+          uwsgi_param Host \$host;
           uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
           uwsgi_param X-Forwarded-Proto \$scheme;
           # Pass request id to api server
@@ -371,15 +371,15 @@ write_files:
         #  autoindex off;
         #}
         #Redirect old urls from redirect-map
-        #if ( $redirect_uri ) {
+        #if ( \$redirect_uri ) {
         #      return 301 \$redirect_uri;
         #}
       
       }
       
       server {
-        if ($host = ${INSTANCE_NAME}) {
-          return 301 https://$host$request_uri;
+        if (\$host = ${INSTANCE_NAME}) {
+          return 301 https://\$host\$request_uri;
         } # managed by Certbot
       
         server_name ${INSTANCE_NAME}
