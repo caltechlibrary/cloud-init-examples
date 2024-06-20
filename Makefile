@@ -7,6 +7,8 @@ PROJECT = cloud-init-examples
 
 VERSION = $(shell grep '"version":' codemeta.json | cut -d\"  -f 4)
 
+RELEASE_HASH=$(shell git log --pretty=format:'%h' -n 1)
+
 BRANCH = $(shell git branch | grep '* ' | cut -d\  -f 2)
 
 MARKDOWN_PAGES =$(shell ls -1 *.md drafts/*.md | sed -E 's/\.md//g')
