@@ -297,7 +297,7 @@ write_files:
       
         # Request ID tracing (allows end-to-end tracking of requests for better
         # troubleshooting)
-        add_header X-Request-ID $request_id;
+        add_header X-Request-ID \$request_id;
       
         # The request body is sent to the proxied server immediately as it is
         # received
@@ -314,10 +314,10 @@ write_files:
           uwsgi_buffering off;
           uwsgi_request_buffering off;
           uwsgi_param Host $host;
-          uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
           uwsgi_param X-Forwarded-Proto $scheme;
           # Pass request id to the ui server
-          uwsgi_param X-Request-ID $request_id;
+          uwsgi_param X-Request-ID \$request_id;
           # X-Session-ID / X-User-ID is read by nginx and included in the logs,
           # however we don't want to expose them to clients so we are hiding them.
           uwsgi_hide_header X-Session-ID;
@@ -335,7 +335,7 @@ write_files:
           uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
           uwsgi_param X-Forwarded-Proto $scheme;
           # Pass request id to the api server
-          uwsgi_param X-Request-ID $request_id;
+          uwsgi_param X-Request-ID \$request_id;
           # X-Session-ID / X-User-ID is read by nginx and included in the logs,
           # however we don't want to expose them to clients so we are hiding them.
           uwsgi_hide_header X-Session-ID;
@@ -354,10 +354,10 @@ write_files:
           uwsgi_buffering off;
           uwsgi_request_buffering off;
           uwsgi_param Host $host;
-          uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
-          uwsgi_param X-Forwarded-Proto $scheme;
+          uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto \$scheme;
           # Pass request id to api server
-          uwsgi_param X-Request-ID $request_id;
+          uwsgi_param X-Request-ID \$request_id;
           # X-Session-ID / X-User-ID is read by nginx and included in the logs,
           # however we don't want to expose them to clients so we are hiding them.
           uwsgi_hide_header X-Session-ID;
@@ -372,25 +372,21 @@ write_files:
         #}
         #Redirect old urls from redirect-map
         #if ( $redirect_uri ) {
-        #      return 301 $redirect_uri;
+        #      return 301 \$redirect_uri;
         #}
       
       }
       
       server {
-          if ($host = ${INSTANCE_NAME}) {
-              return 301 https://$host$request_uri;
-          } # managed by Certbot
-      
-      
+        if ($host = ${INSTANCE_NAME}) {
+          return 301 https://$host$request_uri;
+        } # managed by Certbot
       
         server_name ${INSTANCE_NAME}
       
         add_header Strict-Transport-Security "max-age=15768000";
-          listen 80;
-          return 404; # managed by Certbot
-      
-      
+        listen 80;
+        return 404; # managed by Certbot
       }
       
       EOT
@@ -415,7 +411,9 @@ write_files:
       INVENIO_LOGGING_CONSOLE_LEVEL=DEBUG
       FLASK_ENV=development
       EOT
+
       echo "Setting up systemd service support"
+      echo "  generating rdm.service"
       cat <<EOT >rdm.service
       [Unit]
       Description=Launch InvenioRDM Web Interface
@@ -432,6 +430,8 @@ write_files:
       [Install]
       WantedBy=multi-user.target
       EOT
+
+      echo "  generating rdm_celery.service"
       cat <<EOT >rdm_celery.service
       [Unit]
       Description=Launch InvenioRDM Celery Task
@@ -449,6 +449,8 @@ write_files:
       WantedBy=multi-user.target
 
       EOT
+
+      echo "  generating rdm_rest.service"
       cat <<EOT >rdm_rest.service
       [Unit]
       Description=Launch InvenioRDM Web Interface
@@ -466,14 +468,44 @@ write_files:
       WantedBy=multi-user.target
       
       EOT
-      sudo mv -v rdm.service /etc/systemd/system/
       sudo mv -v rdm_celery.service /etc/systemd/system/
       sudo mv -v rdm_rest.service /etc/systemd/system/
+      sudo mv -v rdm.service /etc/systemd/system/
       sudo chown root.root /etc/systemd/system/rdm*.service
-      sudo chmod 644 /etc/systemd/system/rdm*.service
+      sudo chmod 664 /etc/systemd/system/rdm*.service
+      sudo systemctl enable rdm
       sudo systemctl enable rdm_celery
       sudo systemctl enable rdm_rest
-      sudo systemctl enable rdm
+
+      echo "Generating uwsgi_rest.ini setup"
+      cat <<EOT >uwsgi_rest.ini
+      [uwsgi]
+      socket = 0.0.0.0:5001
+      module = invenio_app.wsgi_rest:application
+      master = true
+      die-on-term = true
+      processes = 2
+      threads = 2
+      mount = /api=invenio_app.wsgi_rest:application
+      manage-script-name = true
+      wsgi-disable-file-wrapper = true
+      single-interpreter = true
+      buffer-size = 8192
+      EOT
+
+      echo "Generating uwsgi_ui.ini setup"
+      cat <<EOT >uwsgi_ui.ini
+      [uwsgi]
+      socket = 0.0.0.0:5000
+      module = invenio_app.wsgi_ui:application
+      master = true
+      die-on-term = true
+      processes = 2
+      threads = 2
+      single-interpreter = true
+      buffer-size = 8192
+      EOT
+
       cat <<EOT
 
          Starting RDM instance ${INSTANCE_NAME}
