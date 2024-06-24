@@ -287,8 +287,6 @@ write_files:
       echo "Generating ${INSTANCE_NAME}_nginx.conf"
       cat <<EOT >"${INSTANCE_NAME}_nginx.conf"
       
-      #include redirect-map.conf;
-      
       server {
       
         server_name ${INSTANCE_NAME}
@@ -378,15 +376,11 @@ write_files:
       }
       
       server {
-        if (\$host = ${INSTANCE_NAME}) {
-          return 301 https://\$host\$request_uri;
-        } # managed by Certbot
-      
         server_name ${INSTANCE_NAME}
       
         add_header Strict-Transport-Security "max-age=15768000";
         listen 80;
-        return 404; # managed by Certbot
+        listen [::]:80;
       }
       
       EOT
