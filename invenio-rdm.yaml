@@ -220,6 +220,7 @@ write_files:
         echo "Missing rdm version for instance named ${INSTANCE_NAME}, aborting"
         exit 1
       fi
+      sudo hostnamectl set-hostname "${INSTANCE_NAME}"
       cat <<EOT
         
         Installing the requires Python packages
@@ -289,7 +290,8 @@ write_files:
       
       server {
       
-        server_name ${INSTANCE_NAME}
+        #server_name ${INSTANCE_NAME}.local;
+        server_name _;
       
         add_header Strict-Transport-Security "max-age=15768000"; # 6 months
       
@@ -376,11 +378,24 @@ write_files:
       }
       
       server {
-        server_name ${INSTANCE_NAME}
+        #server_name ${INSTANCE_NAME}.local;
+        server_name _;
       
         add_header Strict-Transport-Security "max-age=15768000";
         listen 80;
         listen [::]:80;
+      }
+
+      server {
+        #server_name ${INSTANCE_NAME}.local;
+        server_name _;
+      
+        include snippets/self-signed.conf;
+        include snippets/ssl-params.conf;
+      
+        add_header Strict-Transport-Security "max-age=15768000";
+        listen 443 ssl;
+        listen [::]:443 ssl;
       }
       
       EOT
