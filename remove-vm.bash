@@ -13,6 +13,8 @@ DESCRIPTION
 
 Delete and purge a multipass VM instance.
 
+If the VM_NAME is "all" then all VMs will be deleted
+and purged.
 
 EOT
 }
@@ -23,4 +25,8 @@ if [ "$1" = "" ]; then
 else
     MACHINE="$1"
 fi
-multipass delete $MACHINE && multipass purge
+if [ "$MACHINE" = "all" ]; then
+	multipass delete --all && multipass purge
+else
+	multipass delete $MACHINE && multipass purge
+fi

@@ -1,0 +1,488 @@
+#cloud-config
+# Updated to match requirements to install RDM
+package_update: true
+package_upgrade: true
+fqdn: search-machine.local
+packages:
+  - sshfs
+  - docker-compose
+  - docker.io
+  - build-essential
+  - git
+  - lynx
+  - tmux
+  - curl
+  - rsync
+  - nginx
+  - imagemagick
+  - pkg-config
+  - libxml2-dev
+  - libxmlsec1-dev
+  - makepasswd
+  - shellcheck
+  - jq
+  - tree
+  - zip
+  - unzip
+groups:
+  - staff
+  - www-data
+runcmd:
+  - adduser ubuntu staff
+  - adduser ubuntu www-data
+snap:
+  commands:
+    - snap install --classic certbot
+write_files:
+  - content: |
+      #!/bin/bash
+      cat <<EOT
+    
+      Weclome to the Search Machine. You can access if with
+    
+          multipass shell search-machine
+    
+      The following scripts are available and installed in
+      /usr/local/bin.
+    
+        # Display a list of scripts provided with this build
+        menu_of_scripts.bash
+
+        # These are a sample install scripts available in this VM.
+        install_deno.bash
+        install_rustup.bash
+        install_ghcup.bash
+        install_solr.bash
+        install_opensearch.bash
+
+        # Example scripts for working with Dockerized containers.
+        opensearch_indexes_dump.bash
+        opensearch_indexes_restore.bash
+
+      The first one displays this list. The next bunch are run
+      to setup the environment and install deno and some search engines.
+      The rest are provided as a convienence.
+    
+      You can grant yourself SSH access with the following
+      command when you connect using multipass shell.
+    
+         ssh-keygen
+             curl -L -o - https://github.com/${USER}.keys \
+                          >>.ssh/authorized_keys
+    
+      This is handy so you can setup port forward for local
+      services like.
+      EOT    
+
+    path: /usr/local/bin/menu_of_scripts.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+      
+        Configure Docker to run from the Ubuntu user. This is 
+        used by the Solr and OpenSearch installs to simplify
+        running them.
+      
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      sudo groupadd docker
+      sudo usermod -aG docker $USER
+      newgrp docker
+      echo "You should see the hello world container run"
+      if ! docker run hello-world; then
+        echo 'Hello world failed, aborting'
+        exit 1
+      fi
+      sudo chown "$USER":"$USER" /home/"$USER"/.docker -R
+      sudo chmod g+rwx "$HOME/.docker" -R
+      #sudo systemctl enable docker.service
+      #sudo systemctl enable containerd.service
+    path: /usr/local/bin/setup_docker.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+      
+        Install the latest Deno using the installation
+        curl/shell method described at <https://deno.com/>
+      
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Install Deno
+      curl -fsSL https://deno.land/install.sh | sh
+
+      # Setup Deno
+      cat <<EOT >"${HOME}/.deno/env"
+      #!/bin/bash
+      export DENO_INSTALL="${HOME}/.deno"
+      export PATH="${HOME}/.deno/bin:$PATH"
+      EOT
+
+      # Append the deno setup to .bashrc
+      cat <<EOT | ed "${HOME}/.bashrc"
+      \$
+      a
+      # Import env for Deno
+      if [ -f "$HOME/.deno/env" ]; then
+        source "${HOME}/.deno/env"
+      fi
+      .
+      wq
+      EOT
+
+    path: /usr/local/bin/install_deno.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+        
+        Install Rust via Rustup for VM. This lets you use
+        Cargo to install Rust based tools like PageFind.
+
+        See <https://rustup.rs>
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Install Rustup
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+    path: /usr/local/bin/install_rustup.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Install a dockerized instance of Solr.
+
+        See <https://hub.docker.com/_/solr> for details.
+
+        Run with 
+
+           docker run -d -v "$HOME/solrdata:/var/solr" -p 8983:8983 -t solr --name solr_search solr
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      mkdir "${HOME}/solrdata"
+      docker pull solr
+    path: /usr/local/bin/install_solr.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Install a dockerized version of OpenSearch
+
+        See <https://opensearch.org/downloads.html>
+
+        This takes a while, when it is finally running
+        you can access it via http://localhost:5601/
+
+      EOT
+        exit 1
+        ;;
+        *)
+      esac
+      export OPENSEARCH_INITIAL_ADMIN_PASSWORD=$(makepasswd)
+      cat <<EOT >docker_opensearch.env
+      # This is the generates environment for running the OpenSearch container demo.
+      export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+      EOT
+      chmod 600 docker_opensearch.env
+      curl -L -O https://opensearch.org/samples/docker-compose.yml
+      docker-compose up
+
+    path: /usr/local/bin/install_opensearch.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+        
+        Install Haskell via GHCup for VM. With this
+        you can install the latest Pandoc, shellcheck and other
+        Haskell based tools.
+
+        See <https://www.haskell.org/ghcup/>
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Install Haskell via GHCup.
+      curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+
+    path: /usr/local/bin/install_ghcup.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script will dump the Open Search indexes.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % August 17, 2022
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} REPO_ID
+      
+      # DESCRIPTION
+      
+      Dump the Opensearch stats indexes for an Invenio RDM instance.
+      This script uses 'elasticdump' which is available from 
+      
+         <https://github.com/elasticsearch-dump/elasticsearch-dump>
+      
+      and runs via npm/NodeJS.
+      
+      # EXAMPLES
+      
+      Backup the Opensearch for caltechdata running on CaltechDATA.
+      
+      ~~~shell
+           sudo -u ubuntu ${APP_NAME} caltechdata
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function backup_opensearch_to() {
+        REPO_ID="$1"
+        CONTAINER="${REPO_ID}_db_1"
+        BACKUP_DIR="$2"
+        #FIXME: Need to figure out how to identify the two indexes we want to backup to get the stats.
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        # We need to operating fetch and backup each index machine the repo name.
+          curl http://localhost:9200/_settings | jq . \
+               | grep "${REPO_ID}" | cut -d \" -f 2 | \
+               grep -v provided_name | sort -u >"${BACKUP_DIR}/opensearch-indexes.txt"
+            
+          while read -r INDEX_NAME; do
+          # Save the index mapping first, then save the data
+            elasticdump \
+              --input "http://localhost:9200/${INDEX_NAME}" \
+              --output "${BACKUP_DIR}/${INDEX_NAME}.mapping.json" \
+              --type mapping
+            gzip --force "${BACKUP_DIR}/${INDEX_NAME}.mapping.json"
+            elasticdump \
+                --input "http://localhost:9200/${INDEX_NAME}" \
+                --output "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                --type data
+            gzip --force "${BACKUP_DIR}/${INDEX_NAME}.data.json"
+          done <"${BACKUP_DIR}/opensearch-indexes.txt"
+      }
+      
+      function run_backups() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        backup_opensearch_to "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        mkdir -p opensearch-dumps
+        run_backups "$1" "opensearch-dumps"
+        ;;
+      esac
+
+    path: /usr/local/bin/opensearch_indexes_dump.bash
+    owner: "root:root"
+    permissions: "0775"
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script restores the Open Search indexes previously saved using
+      # the dump_opensearch_index.bash script.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} [PATH_TO_OPENSEARCH_DUMP_DIR]
+      
+      # DESCRIPTION
+      
+      Restore the OpenSearch indexes for an Invenio RDM instance from
+      a opensearch-dump directory. It uses the "opensearch-indexes.txt" for
+      the index list. If you want to only restore some of the index you should
+      edit the "opensearch-indexes.txt" file accordingly.
+      
+      This script uses 'elasticdump' which is available from 
+      
+         <https://github.com/elasticsearch-dump/elasticsearch-dump>
+      
+      and runs via npm/NodeJS.
+      
+      # EXAMPLES
+      
+      Restore the Opensearch for caltechdata running on CaltechDATA.
+      
+      ~~~shell
+        sudo -u ubuntu ${APP_NAME} /storage/OpenSearchBackups
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function restore_opensearch_to() {
+        BACKUP_DIR="$1"
+        #FIXME: Need to figure out how to identify the two indexes we want to backup to get the stats.
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        if [ ! -f "${BACKUP_DIR}/opensearch-indexes.txt" ]; then
+          echo "${BACKUP_DIR}/opensearch-indexes.txt not found, aborting"
+          exit 2
+        fi
+            
+          while read -r INDEX_NAME; do
+          # Retrieve the index mapping first, then the index data
+          if [ -f "${BACKUP_DIR}/${INDEX_NAME}.mapping.json.gz" ]; then
+                gunzip "${BACKUP_DIR}/${INDEX_NAME}.mapping.json.gz"
+                elasticdump \
+                  --input "${BACKUP_DIR}/${INDEX_NAME}.mapping.json" \
+                  --output "http://localhost:9200/${INDEX_NAME}" \
+                  --type mapping
+          fi
+          if [ -f "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz" ]; then
+                gunzip  "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz"
+                elasticdump \
+                    --intput "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                    --output "http://localhost:9200/${INDEX_NAME}" \
+                    --type data
+          fi
+          done <"${BACKUP_DIR}/opensearch-indexes.txt"
+      }
+      
+      function run_restore() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        restore_opensearch_to "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+          if [ "$1" != "" ] && [ -d "$1" ]; then
+            run_restore "$1" 
+        else
+            run_restore "opensearch-dumps"
+          fi
+        ;;
+      esac
+
+    path: /usr/local/bin/opensearch_indexes_restore.bash
+    owner: "root:root"
+    permissions: "0775"

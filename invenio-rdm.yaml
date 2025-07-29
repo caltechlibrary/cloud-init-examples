@@ -1,0 +1,1347 @@
+#cloud-config
+# Updated to match requirements to install RDM
+package_update: true
+package_upgrade: true
+fqdn: invenio-rdm.local
+### api:
+###   preserve_sources_list: false
+###   sources:
+###     deadsnakes-ppa:
+###       source: ppa:deadsnakes/ppa
+packages:
+  - sshfs
+  - build-essential
+  - git
+  - elinks
+  - lynx
+  - tmux
+  - curl
+  - software-properties-common
+  - rsync
+  - nginx
+  - imagemagick
+  - pkg-config
+  - libxml2-dev
+  - libxmlsec1-dev
+  - docker.io
+  - docker-compose-v2
+  - makepasswd
+  - shellcheck
+  - jq
+groups:
+  - docker
+  - staff
+  - www-data
+runcmd:
+  - adduser ubuntu docker
+  - adduser ubuntu staff
+  - adduser ubuntu www-data
+  - /usr/local/bin/install_rdm_python.bash
+snap:
+  commands:
+    - snap install --classic certbot
+write_files:
+  - content: |
+      #!/bin/bash
+      cat <<EOT
+    
+      Weclome to the RDM Machine. You can access it with
+    
+          multipass shell invenio-rdm
+    
+      The following scripts are available and installed in
+      /usr/local/bin.
+    
+        # Display a list of scripts provided with this build
+        menu_of_scripts.bash
+
+        # These were used to prep the VM by invenio_rdm_machine.bash
+        # after the first VM launch.
+        install_rdm_python.bash
+        install_rdm_nvm.bash
+        install_rdm_node.bash
+
+        # These setup RDM in various flavors. You run these
+        # from VM to finish setup
+        setup_rdm_caltechauthors.bash
+        setup_rdm_caltechdata.bash
+        setup_rdm_instance.bash INSTANCE_NAME [RDM_VERSION]
+
+        # Utility functions for development and testing
+        invenio_ctl.bash
+        opensearch_indexes_dump.bash
+        opensearch_indexes_restore.bash
+        invenio_sql_backup.bash
+        invenio_sql_restore.bash
+        invenio_sql_command.bash
+    
+      The first one displays this list. The next bunch are running
+      to setup the environment and install an instance of RDM.
+      The rest are provided as a convienence.
+    
+      You can grant yourself SSH access with the following
+      command when you connect using multipass shell.
+    
+         ssh-keygen
+             curl -L -o - https://github.com/${USER}.keys \
+                          >>.ssh/authorized_keys
+    
+      This is handy so you can setup port forward for local
+      services like.
+      EOT    
+
+    path: /usr/local/bin/menu_of_scripts.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+      
+        Install Python 3.9 neeeded by RDM.
+      
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Install Python 3.9 required for RDM deployment and development
+      sudo apt update
+      sudo add-apt-repository --yes ppa:deadsnakes/ppa
+      sudo apt update
+      sudo apt -y install python3-pip python3.9 python3.9-dev python3.9-distutils
+      sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.9 0
+      sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 0
+      python3.9 -m pip install invenio-cli
+      python3.9 -m pip install --use-pep517
+
+    path: /usr/local/bin/install_rdm_python.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Install nvm so I can install NodeJS 16.10.2 via nvm.
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Now we need NodeJS 15.x and we can install that using nvm (Node version manager)
+      echo "User is set to $USER home is $HOME"
+      cd $HOME
+      if [ ! -d "$HOME/.nvm" ]; then git clone https://github.com/nvm-sh/nvm "$HOME/.nvm"; fi
+      cd $HOME/.nvm
+      NVM_VERSION="v$(jq -r .version package.json)"
+      git checkout $NVM_VERSION
+      echo "Installing nvm version ${NVM_VERSION}"
+      ./install.sh
+    path: /usr/local/bin/install_rdm_nvm.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      export NVM_DIR="$HOME/.nvm"
+      # This loads nvm
+      [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+      # This loads nvm bash_completion
+      [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+      NVM_VERSION=$(nvm --version)
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Install NodeJS 16.10.2 via nvm version ${NVM_VERSION}.
+
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      # Now we need NodeJS 16.20.2 is the LTS but RDM wants npm v7 which last used with 16.10.0
+      echo "User is set to $USER home is $HOME"
+      echo "Installing Node 16.10.0 via nvm version ${NVM_VERSION}"
+      source $HOME/.nvm/nvm.sh
+      nvm install 16.10.0
+    path: /usr/local/bin/install_rdm_node.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      # Default short term stable release is currently v11.0,
+      # expecting v12.0 on/after Open Repositories June, 2024
+      RDM_VERSION="v11.0"
+      for ARG in $@; do
+        case "${ARG}" in
+          -h|-help|--help|help)
+          cat <<EOT
+          USAGE: $APP_NAME INSTANCE_NAME [VERSION_NO]
+  
+          Setup an RDM instance using INSTANCE_NAME in
+          the /Sites directory. If VERSION_NO is provided
+          then that version will be installed using the 
+          usual RDM recipe found at 
+  
+             https://inveniordm.docs.cern.ch/install/
+  
+      EOT
+          exit 1
+          ;;
+          *)
+          if [ "${INSTANCE_NAME}" = "" ]; then
+            INSTANCE_NAME="${ARG}"
+          else
+            RDM_VERSION="${ARG}"
+          fi
+          ;;
+        esac
+      done
+      # Make sure we have our instance name and rdm version number.
+      if [ "${INSTANCE_NAME}" = "" ]; then
+        echo "Missing instance names, aborting"
+        exit 1
+      fi
+      if [ "${RDM_VERSION}" = "" ]; then
+        echo "Missing rdm version for instance named ${INSTANCE_NAME}, aborting"
+        exit 1
+      fi
+      sudo hostnamectl set-hostname "${INSTANCE_NAME}"
+      cat <<EOT
+        
+        Installing the requires Python packages
+        for ${INSTANCE_NAME} rdm version ${RDM_VERSION}
+
+      EOT
+      sudo mkdir -p /Sites
+      sudo chown $USER /Sites
+      sudo chmod 775 /Sites
+      cd /Sites
+      echo "Setting initialization defaults"
+      cat <<EOT >"/Sites/${INSTANCE_NAME}_${RDM_VERSION}.toml"
+      [RDM]
+      flavor = RDM
+      logfile = /var/logs/invenio-cli.log
+      
+      [cookiecutter]
+      project_name = ${INSTANCE_NAME}
+      project_shortname = ${INSTANCE_NAME}
+      package_name = ${INSTANCE_NAME}
+      project_site = ${INSTANCE_NAME}.local
+      github_repo = caltechlibrary/${INSTANCE_NAME}
+      description = ${INSTANCE_NAME} InvenioRDM Instance
+      author_name = Caltech Library
+      author_email = help@library.caltech.edu
+      year = $(date +%Y)
+      database = postgresql
+      search = opensearch2
+      file_storage = local
+      development_tools = yes
+      site_code = yes
+      _template = https://github.com/inveniosoftware/cookiecutter-invenio-rdm.git
+      EOT
+
+      echo "Initializing RDM to version ${RDM_VERSION}"
+      echo "in /Sites/${INSTANCE_NAME}"
+      if invenio-cli init rdm -c "$RDM_VERSION" --config "${INSTANCE_NAME}_${RDM_VERSION}.toml"; then
+        echo "completed: invenio-cli init rdm -c $RDM_VERSION --config ${INSTANCE_NAME}_${RDM_VERSION}.tmpl"
+      else
+        echo "failed to complete: invenio-cli init rdm -c $RDM_VERSION --config ${INSTANCE_NAME}_${RDM_VERSION}.tmpl"
+        exit 1
+      fi
+      cd "/Sites/${INSTANCE_NAME}"
+      # There is a bug in the Pipefile, I need to fix line 11
+      echo "Fixing broken Pipfile, /Sites/${INSTANCE_NAME}/Pipfile"
+      sed -i.bak -E 's/editable="True",/editable=true,/g' "/Sites/${INSTANCE_NAME}/Pipfile"
+      if invenio-cli check-requirements --development; then
+        echo "completed: invenio-cli check-requirements --development"
+      else
+        echo "failed to complete: invenio-cli check-requirements --development"
+        exit 1
+      fi
+      if invenio-cli install; then
+        echo "completed: invenio-cli install"
+      else
+        echo "failed to complete: invenio-cli install"
+        exit 1
+      fi
+      if invenio-cli services setup --no-demo-data; then
+        echo "completed: invenio-cli services setup --no-demo-data"
+      else
+        echo "failed to complete: invenio-cli services setup --no-demo-data"
+        exit 1
+      fi
+      echo "Generating ${INSTANCE_NAME}_nginx.conf"
+      cat <<EOT >"${INSTANCE_NAME}_nginx.conf"
+      
+      server {
+      
+        #server_name ${INSTANCE_NAME}.local;
+        server_name _;
+      
+        add_header Strict-Transport-Security "max-age=15768000"; # 6 months
+      
+        # Request ID tracing (allows end-to-end tracking of requests for better
+        # troubleshooting)
+        add_header X-Request-ID \$request_id;
+      
+        # The request body is sent to the proxied server immediately as it is
+        # received
+        proxy_request_buffering off;
+        # Sets the HTTP protocol v1.1 for proxying in order to not use the buffer
+        # in case of chunked transfer encoding
+        proxy_http_version 1.1;
+      
+        # Proxying to the application server
+        ## UI server
+        location / {
+          uwsgi_pass 127.0.0.1:5000;
+          include uwsgi_params;
+          uwsgi_buffering off;
+          uwsgi_request_buffering off;
+          uwsgi_param Host \$host;
+          uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto \$scheme;
+          # Pass request id to the ui server
+          uwsgi_param X-Request-ID \$request_id;
+          # X-Session-ID / X-User-ID is read by nginx and included in the logs,
+          # however we don't want to expose them to clients so we are hiding them.
+          uwsgi_hide_header X-Session-ID;
+          uwsgi_hide_header X-User-ID;
+          # Max upload size (except for files) is set to 100mb as default.
+          client_max_body_size 100m;
+        }
+        ## Most API
+        location /api {
+          uwsgi_pass 127.0.0.1:5001;
+          include uwsgi_params;
+          uwsgi_buffering off;
+          uwsgi_request_buffering off;
+          uwsgi_param Host \$host;
+          uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto \$scheme;
+          # Pass request id to the api server
+          uwsgi_param X-Request-ID \$request_id;
+          # X-Session-ID / X-User-ID is read by nginx and included in the logs,
+          # however we don't want to expose them to clients so we are hiding them.
+          uwsgi_hide_header X-Session-ID;
+          uwsgi_hide_header X-User-ID;
+          # Max upload size (except for files) is set to 100mb as default.
+          client_max_body_size 100m;
+        }
+        ## API files
+        # Another location is defined in order to allow large file uploads in the files
+        # API without exposing the other parts of the application to receive huge
+        # request bodies.
+        location ~ /api/records/.+/draft/files/.+/content {
+          gzip off;
+          uwsgi_pass 127.0.0.1:5001;
+          include uwsgi_params;
+          uwsgi_buffering off;
+          uwsgi_request_buffering off;
+          uwsgi_param Host \$host;
+          uwsgi_param X-Forwarded-For \$proxy_add_x_forwarded_for;
+          uwsgi_param X-Forwarded-Proto \$scheme;
+          # Pass request id to api server
+          uwsgi_param X-Request-ID \$request_id;
+          # X-Session-ID / X-User-ID is read by nginx and included in the logs,
+          # however we don't want to expose them to clients so we are hiding them.
+          uwsgi_hide_header X-Session-ID;
+          uwsgi_hide_header X-User-ID;
+          # Max upload size for files is set to 500GB (configure as needed).
+          client_max_body_size 500G;
+        }
+        # Static content is served directly by nginx and not the application server.
+        #location /static {
+        #  alias /opt/invenio/var/instance/static;
+        #  autoindex off;
+        #}
+        #Redirect old urls from redirect-map
+        #if ( \$redirect_uri ) {
+        #      return 301 \$redirect_uri;
+        #}
+      
+      }
+      
+      server {
+        #server_name ${INSTANCE_NAME}.local;
+        server_name _;
+      
+        add_header Strict-Transport-Security "max-age=15768000";
+        listen 80;
+        listen [::]:80;
+      }
+
+      server {
+        #server_name ${INSTANCE_NAME}.local;
+        server_name _;
+      
+        include snippets/self-signed.conf;
+        include snippets/ssl-params.conf;
+      
+        add_header Strict-Transport-Security "max-age=15768000";
+        listen 443 ssl;
+        listen [::]:443 ssl;
+      }
+      
+      EOT
+      sudo mv -v "${INSTANCE_NAME}_nginx.conf" "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo chown root:root "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo chmod 664 "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo ln "/etc/nginx/sites-available/${INSTANCE_NAME}.conf" "/etc/nginx/sites-enabled/${INSTANCE_NAME}.conf"
+      sudo rm "/etc/nginx/sites-enabled/default"
+      sudo systemctl restart nginx
+      echo "Setting up /etc/sysctl/sysctl.d/rdm_sysctl.conf"
+      cat <<EOT >rdm_sysctl.conf
+      vm.max_map_count=262144
+      EOT
+      sudo mv -v rdm_sysctl.conf /etc/sysctl/sysctl.d/rdm_sysctl.conf
+      sudo chown root.root /etc/sysctl/sysctl.d/rdm_sysctl.conf
+      sudo chmod 644 /etc/sysctl/sysctl.d/rdm_sysctl.conf
+      echo "Write environment settings for systemd service support"
+      INVENIO_SECRET_KEY="$(makepasswd -char 64)"
+      cat <<EOT >.env
+      # This is an example of run time environment for developing RDM.
+      INVENIO_SECRET_KEY=${INVENIO_SECRET_KEY}
+      INVENIO_LOGGING_CONSOLE_LEVEL=DEBUG
+      FLASK_ENV=development
+      EOT
+
+      echo "Setting up systemd service support"
+      echo "  generating rdm.service"
+      cat <<EOT >rdm.service
+      [Unit]
+      Description=Launch InvenioRDM Web Interface
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=kmsg
+      StandardError=kmsg
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/usr/local/bin/pipenv run uwsgi --logger syslog:inveniordm_ui uwsgi_ui.ini
+
+      [Install]
+      WantedBy=multi-user.target
+      EOT
+
+      echo "  generating rdm_celery.service"
+      cat <<EOT >rdm_celery.service
+      [Unit]
+      Description=Launch InvenioRDM Celery Task
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=kmsg
+      StandardError=kmsg
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/usr/local/bin/pipenv run celery --app invenio_app.celery worker --beat --events --loglevel INFO
+
+      [Install]
+      WantedBy=multi-user.target
+
+      EOT
+
+      echo "  generating rdm_rest.service"
+      cat <<EOT >rdm_rest.service
+      [Unit]
+      Description=Launch InvenioRDM Web Interface
+      
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=kmsg
+      StandardError=kmsg
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/usr/local/bin/pipenv run uwsgi --logger syslog:inveniordm_rest uwsgi_rest.ini
+      
+      [Install]
+      WantedBy=multi-user.target
+      
+      EOT
+      sudo mv -v rdm_celery.service /etc/systemd/system/
+      sudo mv -v rdm_rest.service /etc/systemd/system/
+      sudo mv -v rdm.service /etc/systemd/system/
+      sudo chown root.root /etc/systemd/system/rdm*.service
+      sudo chmod 664 /etc/systemd/system/rdm*.service
+      sudo systemctl enable rdm
+      sudo systemctl enable rdm_celery
+      sudo systemctl enable rdm_rest
+
+      echo "Generating uwsgi_rest.ini setup"
+      cat <<EOT >uwsgi_rest.ini
+      [uwsgi]
+      socket = 0.0.0.0:5001
+      module = invenio_app.wsgi_rest:application
+      master = true
+      die-on-term = true
+      processes = 2
+      threads = 2
+      mount = /api=invenio_app.wsgi_rest:application
+      manage-script-name = true
+      wsgi-disable-file-wrapper = true
+      single-interpreter = true
+      buffer-size = 8192
+      EOT
+
+      echo "Generating uwsgi_ui.ini setup"
+      cat <<EOT >uwsgi_ui.ini
+      [uwsgi]
+      socket = 0.0.0.0:5000
+      module = invenio_app.wsgi_ui:application
+      master = true
+      die-on-term = true
+      processes = 2
+      threads = 2
+      single-interpreter = true
+      buffer-size = 8192
+      EOT
+
+      cat <<EOT
+
+         Starting RDM instance ${INSTANCE_NAME}
+
+             cd /Sites/${INSTANCE_NAME}
+             invenio-cli services start
+             sudo systemctl start rdm_celery
+             sudo systemctl start rdm_rest
+             sudo systemctl start rdm
+             sudo systemctl start nginx
+
+         Checking RDM instance ${INSTANCE_NAME}
+
+             cd /Sites/${INSTANCE_NAME}
+             invenio-cli services status
+             sudo systemctl status rdm_celery
+             sudo systemctl status rdm_rest
+             sudo systemctl status rdm
+             sudo systemctl status nginx
+
+         Shutdownning down RDM instance ${INSTANCE_NAME}
+
+             cd /Sites/${INSTANCE_NAME}
+             sudo systemctl stop nginx
+             sudo systemctl stop rdm
+             sudo systemctl stop rdm_rest
+             sudo systemctl stop rdm_celery
+             invenio-cli services stop
+
+      EOT
+
+    path: /usr/local/bin/setup_rdm_instance.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      # This script retrieves the https://github.com/caltechlibrary/caltechauthors
+      # and sets up a test version of CaltechAUTHORS.
+      case "$1" in
+        -h|-help|--help|help)
+        cat <<EOT
+        USAGE: $APP_NAME
+
+        Setup a test version of CaltechAUTHORS without any
+        data. This is installed in the /Sites/caltechauthors 
+        directory of your Multipass VM. NOTE: The S3 bucket
+        and DataCite integration is skipped in the Multipass
+        VM setup. See <https://github.com/caltechlibrary/caltechauthors>
+        README.md for details as to how to implement that.
+      
+      EOT
+        exit 1
+        ;;
+        *)
+        ;;
+      esac
+      sudo mkdir -p "/Sites"
+      sudo chown $USER "/Sites"
+      sudo chmod 775 "/Sites"
+      cd /Sites
+      git clone https://github.com/caltechlibrary/caltechauthors
+      cd /Sites
+      echo 'Clone citeproc-py'
+      git clone https://github.com/caltechlibrary/citeproc-py.git
+      cd /Sites/caltechauthors
+      invenio-cli packages install ../citeproc-py
+      cd /Sites
+      echo 'Cloning Caltech Library copy of idutils (authors branch)'
+      git clone https://github.com/caltechlibrary/idutils
+      cd idutils      
+      git checkout authors
+      cd /Sites/caltechauthors
+      pipenv install
+      invenio-cli packages install ../idutils
+      invenio-cli services setup --no-demo-data
+      cd /Sites
+      echo 'Cloning invenio-rdm-records (new-authors branch)'
+      git clone https://github.com/caltechlibrary/invenio-rdm-records
+      cd /Sites/invenio-rdm-records
+      git checkout new-authors
+      cd /Sites
+      echo 'Cloning invenio-communities (authors branch)'
+      git clone https://github.com/caltechlibrary/invenio-communities
+      cd /Sites/invenio-rdm-communities
+      git checkout authors
+      cd /Sites
+      echo 'Cloning invenio-app (authors branch)'
+      git clone https://github.com/caltechlibrary/invenio-app-rdm
+      cd /Sites/invenio-app-rdm
+      git checkout authors
+      cd /Sites/caltechauthors
+      # NOTE: Skipping S3 setup for Multipass development configuration
+      ### echo "Creating an environment file"
+      ### read -p 'Enter DataCite Password: ' INVENIO_DATACITE_PASSWORD
+      ### read -p 'Enter Secret Key: ' INVENIO_SECRET_KEY
+      ### read -p 'Enter S3 Access Key ID: ' INVENIO_S3_ACCESS_KEY_ID
+      ### read -p 'Enter RDM Logging level: ' INVENIO_LOGGING_CONSOLE_LEVEL
+      ### read -p 'Enter RDM Mail password: ' INVENIO_MAIL_PASSWORD
+      ### echo "Writing /Sites/caltechauthors/.env file"
+      ### cat <<EOT >/Sites/caltechauthors/.env
+      ### INVENIO_DATACITE_PASSWORD="${INVENIO_DATACITE_PASSWORD}"
+      ### INVENIO_SECRET_KEY="${INVENIO_SECRET_KEY}"
+      ### INVENIO_S3_ACCESS_KEY_ID="${INVENIO_S3_ACCESS_KEY_ID}"
+      ### INVENIO_S3_SECRET_ACCESS_KEY="${INVENIO_S3_SECRET_ACCESS_KEY}"
+      ### INVENIO_LOGGING_CONSOLE_LEVEL="${INVENIO_LOGGING_CONSOLE_LEVEL}"
+      ### INVENIO_MAIL_PASSWORD="${INVENIO_MAIL_PASSWORD}"
+      ### EOT
+      ### pipenv run invenio files location s3-default s3://caltechauthors --default
+      echo 'Setting up vm.max_map_count in /etc/sysctl.conf'
+      sudo sed -E 's/^vm.max_map_count/#vm.max_map_count/' --in-place=.bak /etc/sysctl.conf
+      sudo cp -p /etc/sysctl.conf /etc/sysctl.conf.bak2
+      cat <<EOT | sudo ed /etc/sysctl.conf
+      $
+      a
+      vm.max_map_count=262144
+      .
+      wq
+      EOT
+      cd /Sites/caltechauthors
+      echo 'Getting the latest ROR data'
+      wget https://zenodo.org/record/7038913/files/v1.5-2022-08-31-ror-data.zip?download=1 -O ror.zip 
+      pipenv run invenio vocabularies import --vocabulary funders --origin "/Sites/caltechauthors/ror.zip"
+      pipenv run invenio vocabularies import --vocabulary awards --filepath ./vocabularies-future.yaml
+      pipenv run invenio vocabularies import --vocabulary names --filepath ./vocabularies-future.yaml
+      sudo cp -vp /Sites/caltechauthors/nginx.conf /etc/nginx/sites-enabled/default
+      sudo cp -vp /Sites/caltechauthors/redirect-map.conf /etc/nginx/
+      # NOTE: We're running a localhost VM so don't need the certbot cert
+      #sudo certbot --nginx
+      sudo service nginx restart
+      sudo cp -vp /Sites/caltechauthors/rdm_rest.service /etc/systemd/system/.
+      sudo cp -vp /Sites/caltechauthors/rdm.service /etc/systemd/system/.
+      sudo cp -vp /Sites/caltechauthors/rdm_celery.service /etc/systemd/system/.
+      cat <<EOT
+         Bring up RDM with the following commands
+
+           invenio-cli services start
+           sudo systemctl daemon-reload
+           sudo systemctl start rdm
+           sudo systemctl start rdm_rest
+           sudo systemctl start rdm_celery
+
+        Development instance should be setup. 
+
+        NOTE: S3, DataCite, certbot integration skipped.
+              See <https://github.com/caltechlibrary/caltechauthors> 
+              for more details.
+      
+      EOT
+    path: /usr/local/bin/setup_rdm_caltechauthors.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      cat <<EOT
+        usage: ${APP_NAME} 
+
+        This is not implemented yet.
+      EOT
+      exit 1
+    path: /usr/local/bin/setup_rdm_caltechdata.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      
+      APP_NAME=$(basename $0)
+      
+      #
+      # This script can bring invenio-rdm down in an orderly fashion
+      # or start it back up.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % August 17, 2022
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} start|stop
+      
+      # DESCRIPTION
+      
+      Bring invenio-rdm up or down easily. This is a convence script only.
+      It is not terribly bright or robust!
+      
+      # EXAMPLES
+      
+      ~~~shell
+           ${APP_HELP} help
+           ${APP_NAME} stop
+           ${APP_NAME} start
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function start_invenio() {
+        invenio-cli services start
+        sudo systemctl start rdm_celery
+        sudo systemctl start rdm_rest
+        sudo systemctl start rdm
+        sudo systemctl start nginx
+      }
+      
+      function stop_invenio() {
+        sudo systemctl stop nginx
+        sudo systemctl stop rdm
+        sudo systemctl stop rdm_rest
+        sudo systemctl stop rdm_celery
+        invenio-cli services stop
+      }
+      
+      function status_invenio() {
+        invenio-cli services status
+        echo "Press q each status response"
+        sudo systemctl status nginx
+        sudo systemctl status rdm
+        sudo systemctl status rdm_rest
+        sudo systemctl status rdm_celery
+      }
+      
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+        h|help|-h|--help)
+          usage
+          exit 0
+          ;;
+        start)
+          start_invenio
+          ;;
+        stop)
+          stop_invenio
+          ;;
+        status)
+          status_invenio
+          ;;
+        *)
+          usage
+          exit 1
+          ;;
+      esac
+
+    path: /usr/local/bin/invenio_ctl.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script will dump the Open Search indexes.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % August 17, 2022
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} REPO_ID
+      
+      # DESCRIPTION
+      
+      Dump the Opensearch stats indexes for an Invenio RDM instance.
+      This script uses 'elasticdump' which is available from 
+      
+         <https://github.com/elasticsearch-dump/elasticsearch-dump>
+      
+      and runs via npm/NodeJS.
+      
+      # EXAMPLES
+      
+      Backup the Opensearch for caltechdata running on CaltechDATA.
+      
+      ~~~shell
+           sudo -u ubuntu ${APP_NAME} caltechdata
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function backup_opensearch_to() {
+        REPO_ID="$1"
+        CONTAINER="${REPO_ID}_db_1"
+        BACKUP_DIR="$2"
+        #FIXME: Need to figure out how to identify the two indexes we want to backup to get the stats.
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        # We need to operating fetch and backup each index machine the repo name.
+          curl http://localhost:9200/_settings | jq . \
+               | grep "${REPO_ID}" | cut -d \" -f 2 | \
+               grep -v provided_name | sort -u >"${BACKUP_DIR}/opensearch-indexes.txt"
+            
+          while read -r INDEX_NAME; do
+          # Save the index mapping first, then save the data
+            elasticdump \
+              --input "http://localhost:9200/${INDEX_NAME}" \
+              --output "${BACKUP_DIR}/${INDEX_NAME}.mapping.json" \
+              --type mapping
+            gzip --force "${BACKUP_DIR}/${INDEX_NAME}.mapping.json"
+            elasticdump \
+                --input "http://localhost:9200/${INDEX_NAME}" \
+                --output "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                --type data
+            gzip --force "${BACKUP_DIR}/${INDEX_NAME}.data.json"
+          done <"${BACKUP_DIR}/opensearch-indexes.txt"
+      }
+      
+      function run_backups() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        backup_opensearch_to "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        mkdir -p opensearch-dumps
+        run_backups "$1" "opensearch-dumps"
+        ;;
+      esac
+
+    path: /usr/local/bin/opensearch_indexes_dump.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script restores the Open Search indexes previously saved using
+      # the dump_opensearch_index.bash script.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} [PATH_TO_OPENSEARCH_DUMP_DIR]
+      
+      # DESCRIPTION
+      
+      Restore the OpenSearch indexes for an Invenio RDM instance from
+      a opensearch-dump directory. It uses the "opensearch-indexes.txt" for
+      the index list. If you want to only restore some of the index you should
+      edit the "opensearch-indexes.txt" file accordingly.
+      
+      This script uses 'elasticdump' which is available from 
+      
+         <https://github.com/elasticsearch-dump/elasticsearch-dump>
+      
+      and runs via npm/NodeJS.
+      
+      # EXAMPLES
+      
+      Restore the Opensearch for caltechdata running on CaltechDATA.
+      
+      ~~~shell
+        sudo -u ubuntu ${APP_NAME} /storage/OpenSearchBackups
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function restore_opensearch_to() {
+        BACKUP_DIR="$1"
+        #FIXME: Need to figure out how to identify the two indexes we want to backup to get the stats.
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        if [ ! -f "${BACKUP_DIR}/opensearch-indexes.txt" ]; then
+          echo "${BACKUP_DIR}/opensearch-indexes.txt not found, aborting"
+          exit 2
+        fi
+            
+          while read -r INDEX_NAME; do
+          # Retrieve the index mapping first, then the index data
+          if [ -f "${BACKUP_DIR}/${INDEX_NAME}.mapping.json.gz" ]; then
+                gunzip "${BACKUP_DIR}/${INDEX_NAME}.mapping.json.gz"
+                elasticdump \
+                  --input "${BACKUP_DIR}/${INDEX_NAME}.mapping.json" \
+                  --output "http://localhost:9200/${INDEX_NAME}" \
+                  --type mapping
+          fi
+          if [ -f "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz" ]; then
+                gunzip  "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz"
+                elasticdump \
+                    --intput "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                    --output "http://localhost:9200/${INDEX_NAME}" \
+                    --type data
+          fi
+          done <"${BACKUP_DIR}/opensearch-indexes.txt"
+      }
+      
+      function run_restore() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        restore_opensearch_to "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+          if [ "$1" != "" ] && [ -d "$1" ]; then
+            run_restore "$1" 
+        else
+            run_restore "opensearch-dumps"
+          fi
+        ;;
+      esac
+
+    path: /usr/local/bin/opensearch_indexes_restore.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script backs up the SQL data (Postgres) held in the containers.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} CONTAINER_NAME BACKUP_DIR
+      
+      # DESCRIPTION
+      
+      Dump the Postgres databases for CONTAINER_NAME into BACKUP_DIR.
+      CONTAINER_NAME is the name of your Invenio instance and will be
+      used as the prefix to the backup up filename.
+      
+      # EXAMPLES
+      
+      If the instance name was 'caltechauthors' then you can backup
+      the Postgres running in 'caltechauthors_db_1' and write them
+      to '/var/backups/postgres'.
+      
+      ~~~shell
+           ${APP_NAME} caltechauthors /var/backups/postgres
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function backup_postgres_to() {
+        DOCKER="$1"
+        CONTAINER="$2"
+        BACKUP_DIR="$3"
+        if [ "${CONTAINER}" = "" ]; then
+          echo "Missing the container name"
+          exit 1
+        fi
+        if [ "${BACKUP_DIR}" = "" ]; then
+          echo "Missing the backup directory name"
+          exit 1
+        fi
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "${BACKUP_DIR} does not exist"
+          exit 1
+        fi
+        BACKUP_FILE="${BACKUP_DIR}/${CONTAINER}-${DB_NAME}-$(date +%Y-%m-%d).sql"
+        $DOCKER container exec \
+          "${CONTAINER}" /usr/bin/pg_dump \
+          --username="${DB_USERNAME}" \
+          --column-inserts \
+          "${DB_NAME}" \
+          >"${BACKUP_FILE}"
+        if [ -f "${BACKUP_FILE}" ]; then
+          gzip "${BACKUP_FILE}"
+        else
+          echo "WARNING: ${BACKUP_FILE} not found!"
+        fi
+      }
+      
+      function run_backups() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        # Source the file "postgres_env.cfg" it contains the
+        # value $DB_USERNAME.
+        if [ -f postgres_env.cfg ]; then
+          . postgres_env.cfg
+        fi
+        if [ "$DB_NAME" = "" ]; then
+          echo "The environment variable DB_NAME is not set."
+          exit 1
+        fi
+        if [ "$DB_USERNAME" = "" ]; then
+          echo "The environment variable DB_USERNAME is not set."
+          exit 1
+        fi
+      
+        DOCKER="/usr/bin/docker"
+        if [ ! -f "${DOCKER}" ]; then
+          DOCKER=$(which docker)
+        fi
+        if [ "${DOCKER}" = "" ]; then
+          echo "Cannot find docker program, aborting"
+          exit 1
+        fi
+        backup_postgres_to "$DOCKER" "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        run_backups "$1" "$2"
+        ;;
+      esac
+
+    path: /usr/local/bin/invenio_sql_backup.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script can bring invenio-rdm down in an orderly fashion
+      # or start it back up.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} CONTAINER_NAME BACKUP_NAME
+      
+      # DESCRIPTION
+      
+      Restore the Postgres databases for CONTAINER_NAME from BACKUP_NAME.
+      CONTAINER_NAME is the name of your Invenio instance and will be
+      used as the prefix to the backup up filename. BACKUP_NAME is the
+      path to your SQL dump file.
+      
+      # EXAMPLES
+      
+      If the instance name was 'caltechauthors' then you can restore
+      the Postgres running in 'caltechdata_db_1' and write them
+      to '/var/backups/postgres/caltechdata-dump-2022-09-19.sql'.
+      
+      ~~~shell
+           ${APP_NAME} caltechdata_db_1 /var/backups/postgres/caltechdata-dump-2022-09-19.sql
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function restore_postgres_from() {
+        BACKUP_FILE="$1"
+        DOCKER="$2"
+        CONTAINER="$3"
+        if [ "${CONTAINER}" = "" ]; then
+          echo "Missing the container name"
+          exit 1
+        fi
+        $DOCKER container exec -it "${CONTAINER}" /usr/bin/psql -U "${DB_USERNAME}" --dbname postgres -c "DROP DATABASE IF EXISTS ${DB_NAME}"
+        $DOCKER container exec -it "${CONTAINER}" /usr/bin/psql -U "${DB_USERNAME}" --dbname postgres -c "CREATE DATABASE ${DB_NAME}"
+        $DOCKER container exec /usr/bin/createdb -U "${DB_USERNAME}" "${DB_NAME}"
+         cat "${BACKUP_FILE}" | $DOCKER container exec \
+           -i "${CONTAINER}" /usr/bin/psql \
+           --username="${DB_USERNAME}" \
+           "${DB_NAME}"
+      }
+      
+      function run_restore() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        # Source the file "postgres_env.cfg" it contains the
+        # value $DB_USERNAME.
+        if [ -f postgres_env.cfg ]; then
+          . postgres_env.cfg
+        fi
+        if [ "$DB_NAME" = "" ]; then
+          echo "The environment variable DB_NAME is not set."
+          exit 1
+        fi
+        if [ "$DB_USERNAME" = "" ]; then
+          echo "The environment variable DB_USERNAME is not set."
+          exit 1
+        fi
+      
+        DOCKER="/usr/bin/docker"
+        if [ ! -f "${DOCKER}" ]; then
+          DOCKER=$(which docker)
+        fi
+        if [ "${DOCKER}" = "" ]; then
+          echo "Cannot find docker program, aborting"
+          exit 1
+        fi
+        restore_postgres_from "$2" "$DOCKER" "$1"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        run_restore "$1" "$2"
+        ;;
+      esac
+
+    path: /usr/local/bin/invenio_sql_restore.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      APP_NAME="$(basename "$0")"
+      
+      #
+      # This script can bring invenio-rdm down in an orderly fashion
+      # or start it back up.
+      #
+      
+      function usage() {
+        cat <<EOT
+      % ${APP_NAME}() ${APP_NAME} user manual
+      % R. S. Doiel
+      % May 29, 2024
+      
+      # NAME
+      
+      ${APP_NAME}
+      
+      # SYNOPSIS
+      
+      ${APP_NAME} CONTAINER_NAME SQL_COMMANDS
+      
+      # DESCRIPTION
+      
+      Run SQL in Postgres REPL for CONTAINER_NAME. Note inside the container
+      you don't have very much in the way of editors, etc.  That means this
+      is only useful to interactively type commands and you can't take
+      advantage of the usaul rich functionality of Postgres' REPL where you
+      have a full POSIX environment available.
+      
+      # EXAMPLES
+      
+      Run specific commands via psql inside the containers for an instance of 
+      "caltechauthors". Note the "_db_1" is needed since that is the RDM naming
+      convention.
+      
+      ~~~shell
+        ${APP_NAME} caltechauthors_db_1 '\dt'
+        ${APP_NAME} caltechauthors_db_1 'SELECT json from vocabularies_metadata;'
+      ~~~
+      
+      EOT
+      
+      }
+      
+      function run_command() {
+        DOCKER="$1"
+        CONTAINER="$2"
+        COMMAND="$3"
+        if [ "${CONTAINER}" = "" ]; then
+          echo "Missing the container name"
+          exit 1
+        fi
+        $DOCKER container exec \
+          "${CONTAINER}" /usr/bin/psql \
+          --username="${DB_USERNAME}" \
+          -d "${DB_NAME}" -c "${COMMAND}"
+        }
+      
+      function run_all() {
+        #
+        # Sanity check our requiremented environment
+        #
+        SCRIPTNAME="$(readlink -f "$0")"
+        DNAME="$(dirname "${SCRIPTNAME}")"
+        cd "${DNAME}" || exit 1
+        # Source the file "postgres_env.cfg" it contains the
+        # value $DB_USERNAME.
+        if [ -f postgres_env.cfg ]; then
+          . postgres_env.cfg
+        fi
+        if [ "$DB_NAME" = "" ]; then
+          echo "The environment variable DB_NAME is not set."
+          exit 1
+        fi
+        if [ "$DB_USERNAME" = "" ]; then
+          echo "The environment variable DB_USERNAME is not set."
+          exit 1
+        fi
+      
+        DOCKER="/usr/bin/docker"
+        if [ ! -f "${DOCKER}" ]; then
+          DOCKER=$(which docker)
+        fi
+        if [ "${DOCKER}" = "" ]; then
+          echo "Cannot find docker program, aborting"
+          exit 1
+        fi
+        run_command "$DOCKER" "$1" "$2"
+      }
+      
+      #
+      # Main entry script point.
+      #
+      case "$1" in
+      h | help | -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        if [ "$1" = "" ]; then
+          usage
+          exit 1
+        fi
+        run_all "$1" "$2"
+        ;;
+      esac
+
+    path: /usr/local/bin/invenio_sql_command.bash
+    owner: 'root:root'
+    permissions: '0775'

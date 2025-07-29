@@ -7,6 +7,8 @@ PROJECT = cloud-init-examples
 
 VERSION = $(shell grep '"version":' codemeta.json | cut -d\"  -f 4)
 
+RELEASE_HASH=$(shell git log --pretty=format:'%h' -n 1)
+
 BRANCH = $(shell git branch | grep '* ' | cut -d\  -f 2)
 
 MARKDOWN_PAGES =$(shell ls -1 *.md drafts/*.md | sed -E 's/\.md//g')
@@ -16,7 +18,8 @@ HTML_PAGES = $(shell ls -1 *.md | sed -E 's/\.md/.html/g')
 build: CITATION.cff about.md $(HTML_PAGES) index.html about.html
 
 CITATION.cff: codemeta.json
-	codemeta2cff
+	@cat codemeta.json | sed -E   's/"@context"/"at__context"/g;s/"@type"/"at__type"/g;s/"@id"/"at__id"/g' >_codemeta.json
+	echo "" | pandoc --metadata title="Cite $(PROGRAM)" --metadata-file=_codemeta.json --template=codemeta-cff.tmpl >CITATION.cff
 
 about.html: about.md
 
@@ -42,13 +45,11 @@ save:
 	@if [ "$(msg)" != "" ]; then git commit -am "$(msg)"; else git commit -am "Quick Save"; fi
 	git push origin $(BRANCH)
 
-publish: save
-	-git checkout gh-pages
-	-git pull origin $(BRANCH)
-	- make -f website.mak
-	-git commit -am "publishing website"
-	-git push origin gh-pages
-	git checkout $(BRANCH)
+website: .FORCE
+	make -f website.mak
+
+publish: website .FORCE
+	./publish.bash
 
 refresh:
 	git fetch origin

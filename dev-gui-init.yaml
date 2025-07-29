@@ -3,17 +3,20 @@ package_update: true
 package_upgrade: true
 fqdn: dev-gui.local
 packages:
+  - aptitude
   - sshfs
   - build-essential
   - git
   - snapcraft
   - autoconf
   - automake
+  - cmake
   - curl
   - wget
   - tmux
   - tree
   - htop
+  - elinks
   - lynx
   - python3-dev
   - python3-pip
@@ -21,14 +24,12 @@ packages:
   - pandoc
   - rsync
   - libexpat1
-  - apache2
-  - apache2-utils
-  - ssl-cert
-  - libapache2-mod-wsgi
-  - ubuntu-desktop
   - xrdp
+  - ubuntu-desktop
   - makepasswd
   - shellcheck
+  - aspell
+  - aspell-en
 groups:
   - docker
   - staff
@@ -37,10 +38,6 @@ snap:
   commands:
   - [ install, docker ]
   - [ install, --classic, go ]
-  - [ install, datatools ]
-  - [ install, mkpage ]
-  - [ install, eprinttools ]
-  - [ install, dataset ]
 runcmd:
   - adduser ubuntu docker
   - adduser ubuntu staff

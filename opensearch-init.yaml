@@ -1,0 +1,257 @@
+#cloud-config
+#
+# opensearch-init.yaml provides a development environemt for building
+# web applications based on PostgreSQL 16, PostgREST 12, Pandoc 3.1,
+# and using Python 3's http.server to emulate a front end web server.
+#
+# This cloud init target Ubuntu's Multipass and assume the image
+# available is Jammy (22.04 LTS). Here's an example creating a VM
+# with Multipass call "opensearch-machine" and accessing it via Multipass's
+# shell.
+#
+# You need more than the default disk image size for fit all the stuff.
+# When you initialize your VM use the following command
+#
+# ~~~
+# multipass launch --name opensearch-machine \
+#                  --memory 4G \
+#                  --disk 50G \
+#                  --cloud-init opensearch-init.yaml
+# ~~~
+#
+# When you're done you can stop the VM with
+#
+# ~~~
+# multipass stop opensearch-machine
+# ~~~
+#
+# You can remove opensearch-machine completely with
+#
+# ~~~
+# multipass stop opensearch-machine
+# multipass delete opensearch-machine
+# multipass purge opensearch-machine
+# ~~~
+#
+# The first time you run your VM you will need to run the following
+# additional setup bash scripts. Then you can choose to install
+# to install Haskell (GHCup) so you can compile the latest Pandoc and PostgREST
+# and Opensearch/Opensearch Dashboard.
+#
+# 1. 01-setup-scripts.bash, creates "$HOME/bin" and "$HOME/sbin" and adds things ito your .bashrc
+# 2. 02-add-python-packages.bash, adds commonly used Python packages to the system
+# 3. 03-add-go-and-caltechlibrary-tools.bash, builds and install DLD Go based tools
+# 4. 04-ghcup-install.bash, installs Haskell toolchain and manager
+# 5. 05-pandoc-build.bash, downloads the latest Pandoc and builds it
+# 6. 06-postgrest-build.bash, downloads the latest PostgREST and builds it.
+# 7. 07-add-opensearch.bash, downloads the Opensearch/Opensearch Dashbaord debs and installs them
+#
+write_files:
+###   - content: |
+###       You are now ready to start working with your Opensearch Machine. Run
+###       You then need to run following to configure this virtual machine for
+###       development. 
+### 
+###           bash ./sbin/01-setup-scripts.bash
+### 
+###       Your may wish to run other scripts in the `$HOME/sbin` directory
+###       depending on your development needs.
+###       Finnally remember to resource your `.bashrc` file after you install
+###       any software to pickup the environment changes defined in it.
+### 
+###           . .bashrc
+###
+###     path: /home/ubuntu/README.1st
+###     owner: ubuntu:ubuntu
+###     permissions: '0664'
+  - content: |
+      #!/bin/bash
+      mkdir -p $HOME/bin
+      mkdir -p $HOME/sbin
+      echo 'export PATH="$HOME/bin:$HOME/sbin:$PATH"' >>"${HOME}/.bashrc"
+      cat <<EOT
+
+      You have added ${HOME}/bin to the PATH in your .bashrc
+      file. To update the path without logging out and in
+      do
+      
+              . .bashrc
+      
+      EOT
+    path: /usr/local/sbin/01-setup-scripts.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      python3 -m pip install idutils
+      python3 -m pip install sqlfluff
+      python3 -m pip install pylint
+      python3 -m pip install progressbar2
+      python3 -m pip install pybtex
+      python3 -m pip install feedgen
+      python3 -m pip install python-dateutil
+      cat <<EOT >$HOME/bin/ws
+      #!/bin/bash
+      echo "Enter Ctlr-c to exit web server"
+      if [ "$1" != "" ]; then
+      	python3 -m http.server "$1"
+      else
+      	python3 -m http.server
+      fi
+      EOT
+      chmod 775 $HOME/bin/ws
+    path: /usr/local/sbin/02-add-python-packages.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      cd
+      sudo snap install go --classic
+      export GOPATH=$HOME
+      mkdir -p "${HOME}/bin"
+      mkdir -p "${HOME}/src/github.com/caltechlibrary"
+      for REPO in irdmtools datatools dataset newt; do
+        cd "${HOME}/src/github.com/caltechlibrary"
+        git clone "https://github.com/caltechlibrary/${REPO}"
+        cd "${REPO}"
+        make
+        make install
+        cd "${HOME}/src/github.com/caltechlibrary"
+      done
+      cd 
+    path: /usr/local/sbin/03-add-go-and-caltechlibrary-tools.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+    path: /usr/local/sbin/04-ghcup-install.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      PATH=$HOME/.ghcup/bin:$PATH
+      export PATH
+      cd
+      git clone https://github.com/jgm/pandoc src/pandoc
+      cd src/pandoc
+      make
+      cp -v $(find . -type f -name pandoc) "${HOME}/bin"
+      cp -v $(find . -type f -name pandoc) "${HOME}/bin/pandoc-server"
+    path: /usr/local/sbin/05-pandoc-build.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      cd
+      git clone https://github.com/PostgREST/postgrest src/postgrest
+      cd src/postgres 
+      stack build --install-ghc --copy-bins --local-bin-path $HOME/bin
+      cd
+    path: /usr/local/sbin/06-postgrest-build.bash
+    owner: root:root
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      cd
+      echo -n "Enter an admin password to use with Opensearch: "
+      read -s ADMIN_PASSWORD
+      cat <<EOT1 >>.bashrc
+      
+      # Opensearch Inital Admin Setup
+      export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${ADMIN_PASSWORD}"
+      
+      EOT1
+      
+      CPU="$(uname -m)"
+      case "${CPU}" in
+         x86_64|amd64)
+           curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/2.11.1/opensearch-dashboards-2.11.1-linux-x64.deb
+           curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.11.1/opensearch-2.11.1-linux-x64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-2.11.1-linux-x64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-dashboards-2.11.1-linux-x64.deb
+           ;;
+         arm64|aarch64)
+           curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/2.11.1/opensearch-dashboards-2.11.1-linux-arm64.deb
+           curl -L -O https://artifacts.opensearch.org/releases/bundle/opensearch/2.11.1/opensearch-2.11.1-linux-arm64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-2.11.1-linux-arm64.deb
+           sudo env OPENSEARCH_INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+                dpkg -i opensearch-dashboards-2.11.1-linux-arm64.deb
+           ;;
+         *)
+         echo "Unsupport CPU ${CPU} see <https://opensearch.org/downloads.html>"
+         ;;
+      esac
+      sudo adduser "$USER" opensearch
+      sudo systemctl daemon-reload
+      sudo systemctl enable opensearch
+      sudo systemctl start opensearch
+      sudo systemctl enable opensearch-dashboards
+      sudo systemctl start opensearch-dashboards
+      # Now install elasticdump to dump and restore indexes
+      sudo apt install nodejs npm
+      sudo npm install n -g
+      sudo n latest
+      sudo npm install elasticdump -g
+      elasticdump --version
+    path: /usr/local/sbin/07-add-opensearch.bash
+    owner: root:root
+    permissions: '0775'
+package_upgrade: true
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, then package_update will be set to true
+#
+# packages may be supplied as a single package name or as a list
+# with the format [<package>, <version>] wherein the specific
+# package version will be installed.
+packages:
+#  - ubuntu-desktop
+  - aptitude
+  - tmux
+  - micro
+  - vim
+  - vis
+  - emacs
+  - tcsh
+  - build-essential
+  - autotools-dev
+  - autoconf
+  - automake
+  - git
+  - curl
+  - lynx
+  - make
+  - pkg-config
+  - postgresql-16
+  - postgresql-16-postgis
+  - postgresql-16-postgis-scripts
+  - postgresql-16-mysql-fdw
+  - postgresql-plpython3-16
+  - postgresql-16-pllua
+  - postgresql-16-plpgsql-check
+  - postgresql-16-semver
+  - pgloader
+  - pgtop
+  - libncurses-dev
+  - libffi-dev
+  - libgmp-dev
+  - libncurses5
+  - zlib1g-dev
+  - shellcheck
+  - python3
+  - python3-pip
+  - libffi-dev
+  - libffi6
+  - libgmp-dev
+  - libgmp10
+  - libncurses-dev
+  - libncurses5
+  - libtinfo5
+  - httpie
+  - npm
