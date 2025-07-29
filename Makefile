@@ -45,13 +45,11 @@ save:
 	@if [ "$(msg)" != "" ]; then git commit -am "$(msg)"; else git commit -am "Quick Save"; fi
 	git push origin $(BRANCH)
 
-publish: save
-	-git checkout gh-pages
-	-git pull origin $(BRANCH)
-	- make -f website.mak
-	-git commit -am "publishing website"
-	-git push origin gh-pages
-	git checkout $(BRANCH)
+website: .FORCE
+	make -f website.mak
+
+publish: website .FORCE
+	./publish.bash
 
 refresh:
 	git fetch origin
