@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>cloud-init-examples</title>
+    <link rel="stylesheet" href="https://caltechlibrary.github.io/css/site.css">
+    <link rel="stylesheet" href="https://media.library.caltech.edu/cl-webcomponents/css/code-blocks.css">
+    <script type="module" src="https://media.library.caltech.edu/cl-webcomponents/copyToClipboard.js"></script>
+    <script type="module" src="https://media.library.caltech.edu/cl-webcomponents/footer-global.js"></script>
+</head>
+<body>
+<header>
+<a href="https://library.caltech.edu"><img src="https://media.library.caltech.edu/assets/caltechlibrary-logo.png" alt="Caltech Library logo"></a>
+</header>
+<nav>
+<ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="index.html">README</a></li>
+    <li><a href="LICENSE">LICENSE</a></li>
+    <!-- <li><a href="INSTALL.html">INSTALL</a></li> -->
+    <!-- <li><a href="user_manual.html">User Manual</a></li> -->
+    <li><a href="about.html">About</a></li>
+    <li><a href="search.html">Search</a></li>
+    <li><a href="https://github.com/caltechlibrary/cloud-init-examples">GitHub</a></li>
+</ul>
+</nav>
+<section>
+<h1 id="rdm-test-and-development">RDM test and development</h1>
+<p>Caltech Library maintains a collection of <a
+href="https://cloudinit.readthedocs.io/en/latest/index.html">cloud
+init</a> examples capability of being run via AWS or for local
+development purposes via <a href="https://multipass.run">Multipass</a>.
+The <a
+href="https://github.com/caltechlibrary/cloud-init-examples">cloud init
+examples</a> GitHub repository includes both Bash scripts for working
+with Multipass and the cloud init YAML files for various projects. This
+includes setting up test and development instances of Invenio RDM.</p>
+<p>If you are developing with Multipass then getting a Ubuntu instance
+up with right Python, NodeJS, NPM is as easy running
+<code>./invenio_rdm_machine.bash</code>. This will create an Ubuntu
+Jammy instance with Python 3.9, NodeJS 14.x and NPM 5.x as is required
+for the v11 STS releaseof RDM. After running the Bash script you can
+then log into your VM instance using the Multipass command
+<code>multipass shell invenio-rdm</code>.</p>
+<p>Three scripts are provided to install one of three RDM
+configurations.</p>
+<dl>
+<dt><code>setup_rdm_caltechauthors.bash</code></dt>
+<dd>
+This will setup an empty instance of RDM based on <a
+href="https://github.com/caltechlibrary/caltechauthors"
+class="uri">https://github.com/caltechlibrary/caltechauthors</a>
+</dd>
+<dt><code>setup_rdm_caltechdata.bash</code></dt>
+<dd>
+This will setup an empty instance of RDM base on <a
+href="https://github.com/caltechlibrary/caltechdata"
+class="uri">https://github.com/caltechlibrary/caltechdata</a>
+</dd>
+<dt><code>setup_rdm_instance.bash</code></dt>
+<dd>
+This will setup a vanilla (unmodified) instance of RDM
+</dd>
+</dl>
+<p>Additional scripts are provided for managing your RDM instance
+running in your multipass VM, dumping and restoring the OpenSearch
+indexes as well as scripts to backup, restore and run SQL command
+against the containerized Postgres that manages RDM’s metadata.</p>
+<dl>
+<dt><code>invenio_ctl.bash</code></dt>
+<dd>
+This provides a simple script to bring RDM up, check the status and
+bring it down.
+</dd>
+<dt><code>opensearch_indexes_dump.bash</code></dt>
+<dd>
+This script will dump the OpenSearch indexes (including RDM status) in a
+format that they can be reloaded.
+</dd>
+<dt><code>opensearch_indexes_restore.bash</code></dt>
+<dd>
+This script will restore a previously dumped set of indexes.
+</dd>
+<dt><code>invenio_sql_command.bash</code></dt>
+<dd>
+Run a SQL command from the command line in the RDM container holding
+Postgres
+</dd>
+<dt><code>invenio_sql_backups.bash</code></dt>
+<dd>
+Backup the SQL data running in the Postgres container.
+</dd>
+<dt><code>invenio_sql_restore.bash</code></dt>
+<dd>
+Restore a previosly backed up SQL data to the Postgres in th RDM
+ontainer.
+</dd>
+</dl>
+</section>
+<footer-global></footer-global>
+</body>
+</html>
