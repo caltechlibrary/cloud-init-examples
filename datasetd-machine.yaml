@@ -1,0 +1,58 @@
+#cloud-config
+#
+# This cloud init assume Ubuntu Jammy (22.04 LTS) for the host OS
+# If you use a different version you many need to update the
+# packages list.
+#
+# Write some helpful installer scripts to /usr/local/bin, these
+# can be run after VM is instanciated.
+#
+# - gchup-install.bash, installs Haskell via GHCup
+# - pandoc-build.bash, builds Pandoc from source using cabal
+# - postgrest-build.bash, builds PostgREST from source using stack
+#
+package_upgrade: true
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, then package_update will be set to true
+#
+# packages may be supplied as a single package name or as a list
+# with the format [<package>, <version>] wherein the specific
+# package version will be installed.
+write_files:
+  - content: |
+      #!/bin/bash
+      curl "https://caltechlibrary.github.io/dataset/installer.sh | sh
+    path: /usr/local/sbin/install-dataset.sh
+    owner: root:root
+    permissions: '0775'
+packages:
+  - aptitude
+  - tmux
+  - micro
+  - vim
+  - emacs
+  - tcsh
+  - build-essential
+  - autotools-dev
+  - autoconf
+  - automake
+  - git
+  - curl
+  - make
+  - pkg-config
+  - postgresql
+  - pgloader
+  - pgtop
+  - libncurses-dev
+  - libffi-dev
+  - libgmp-dev
+  - libncurses5
+  - zlib1g-dev
+  - shellcheck
+  - pandoc
+  - nginx
+
+
