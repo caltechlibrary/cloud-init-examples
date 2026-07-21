@@ -1,0 +1,378 @@
+#cloud-config
+# Base machine for the Gunicorn side of the Granian-vs-Gunicorn RDM v13
+# WSGI-server comparison. See invenio-rdm-13-granian-init.yaml for the
+# paired instance -- everything is identical between the two except the
+# app-server layer, so any CPU/memory/latency difference under load can be
+# attributed to Granian vs Gunicorn rather than incidental config drift.
+#
+# Workers/threads below are intentionally set to match this team's current
+# production uWSGI tuning (see docker/uwsgi ini-equivalents in
+# invenio-rdm.yaml: processes=2,threads=2 for UI; processes=4,threads=2 for
+# REST) so this is a fair baseline comparison, not a comparison against
+# untuned defaults. Gunicorn's sync worker class ignores --threads, so
+# --worker-class gthread is set explicitly to make threads take effect,
+# matching how uWSGI's enable-threads/threads settings actually behave.
+#
+# Python stays on standard CPython (GIL on) for both instances in this round
+# -- free-threaded Python 3.14t is a separate variable, not tested here.
+package_update: true
+package_upgrade: true
+fqdn: invenio-rdm13-gunicorn.local
+packages:
+  - sshfs
+  - build-essential
+  - git
+  - lynx
+  - tmux
+  - curl
+  - rsync
+  - nginx
+  - imagemagick
+  - pkg-config
+  - libxml2-dev
+  - libxmlsec1-dev
+  - docker.io
+  - docker-compose-v2
+  - makepasswd
+  - shellcheck
+  - python3-pip
+  - jq
+groups:
+  - docker
+  - staff
+  - www-data
+runcmd:
+  - adduser ubuntu docker
+  - adduser ubuntu staff
+  - adduser ubuntu www-data
+  - /usr/local/bin/install_rdm_toolchain.bash
+snap:
+  commands:
+    - snap install --classic certbot
+write_files:
+  - content: |
+      #!/bin/bash
+      # Installs uv (Python package manager), invenio-cli, and Node 18 (via
+      # nvm) -- everything setup_rdm_gunicorn.bash needs to scaffold and run
+      # an RDM v13 instance. Run once at boot via runcmd; idempotent if rerun.
+      set -euo pipefail
+
+      echo "Installing uv..."
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      echo "Installing invenio-cli..."
+      python3 -m pip install --break-system-packages --upgrade "invenio-cli>=1.11.0"
+
+      echo "Installing nvm + Node 18 for the ubuntu user..."
+      sudo -u ubuntu -i bash -c '
+        set -euo pipefail
+        if [ ! -d "$HOME/.nvm" ]; then
+          git clone --depth 1 https://github.com/nvm-sh/nvm "$HOME/.nvm"
+        fi
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+        nvm install 18
+        nvm alias default 18
+      '
+
+      echo "Setting vm.max_map_count for OpenSearch..."
+      cat <<EOT >/etc/sysctl.d/rdm_sysctl.conf
+      vm.max_map_count=262144
+      EOT
+      sysctl --system
+
+    path: /usr/local/bin/install_rdm_toolchain.bash
+    owner: 'root:root'
+    permissions: '0775'
+  - content: |
+      #!/bin/bash
+      # Scaffolds a basic RDM v13 instance running under Gunicorn instead of
+      # uWSGI. Not run automatically by cloud-init -- ssh in after boot and
+      # run this manually so each step can be watched/debugged, matching the
+      # existing setup_rdm_instance.bash convention in this repo.
+      #
+      # USAGE: setup_rdm_gunicorn.bash [INSTANCE_NAME] [TEMPLATE_VERSION] [RDM_PIN_VERSION]
+      #
+      # TEMPLATE_VERSION selects a branch of cookiecutter-invenio-rdm (the
+      # scaffolding template), which only branches at major.minor -- there is
+      # no v13.1 or v13.1.2 branch, only v13.0. It does NOT pin the exact
+      # invenio-app-rdm package version.
+      #
+      # RDM_PIN_VERSION is the exact invenio-app-rdm release to pin via
+      # "uv add" after scaffolding, so this experiment runs the same patch
+      # release as production. Confirmed against caltechauthors (git tag
+      # v13.1.2.caltechauthors.2) and caltechdata (uv.lock resolves to
+      # 13.1.2) on 2026-07-21 -- update this default if production upgrades.
+      set -euo pipefail
+      APP_NAME="$(basename "$0")"
+      INSTANCE_NAME="${1:-rdm13-gunicorn}"
+      TEMPLATE_VERSION="${2:-v13.0}"
+      RDM_PIN_VERSION="${3:-13.1.2}"
+
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+      nvm use 18
+      export PATH="$HOME/.local/bin:$PATH"
+
+      sudo mkdir -p /Sites
+      sudo chown "$USER" /Sites
+      sudo chmod 775 /Sites
+      cd /Sites
+
+      echo "Writing cookiecutter config for ${INSTANCE_NAME} (template ${TEMPLATE_VERSION})"
+      cat <<EOT >"/Sites/${INSTANCE_NAME}_${TEMPLATE_VERSION}.toml"
+      [RDM]
+      flavour = RDM
+      logfile = /var/log/invenio-cli.log
+
+      [cookiecutter]
+      project_name = ${INSTANCE_NAME}
+      project_shortname = ${INSTANCE_NAME}
+      package_name = ${INSTANCE_NAME}
+      project_site = ${INSTANCE_NAME}.local
+      github_repo = caltechlibrary/${INSTANCE_NAME}
+      description = ${INSTANCE_NAME} InvenioRDM Instance (Gunicorn experiment)
+      author_name = Caltech Library
+      author_email = help@library.caltech.edu
+      year = $(date +%Y)
+      database = postgresql
+      search = opensearch2
+      file_storage = S3
+      development_tools = yes
+      site_code = yes
+      _template = https://github.com/inveniosoftware/cookiecutter-invenio-rdm.git
+      EOT
+
+      echo "Initialising RDM template ${TEMPLATE_VERSION} into /Sites/${INSTANCE_NAME}"
+      invenio-cli init rdm -c "$TEMPLATE_VERSION" --config "${INSTANCE_NAME}_${TEMPLATE_VERSION}.toml"
+      cd "/Sites/${INSTANCE_NAME}"
+
+      # NOTE: assumes the ${TEMPLATE_VERSION} cookiecutter template emits
+      # pyproject.toml (not Pipfile) -- true for both TU Wien's v14rc1 and
+      # caltechauthors' v13.1.2 instances as of 2026-07. invenio-cli
+      # auto-selects the "uv" backend whenever Pipfile is absent and
+      # pyproject.toml is present (invenio_cli/helpers/cli_config.py). If a
+      # future template still emits Pipfile, this step will fail loudly at
+      # "uv add" below rather than silently falling back to pipenv.
+      echo "Pinning invenio-app-rdm to ${RDM_PIN_VERSION} (matching production)"
+      uv add "invenio-app-rdm[opensearch2,s3]==${RDM_PIN_VERSION}"
+
+      echo "Adding gunicorn and invenio-s3 as dependencies"
+      uv add gunicorn
+      uv add invenio-s3
+
+      echo "Installing dependencies and building assets"
+      invenio-cli install
+
+      # invenio-cli services setup will auto-create a "default-location"
+      # pointing at the placeholder URI s3://default (see
+      # invenio_cli/commands/services.py:_default_location_path -- for
+      # file_storage=s3 it always emits "s3://default", not a real bucket
+      # name). That placeholder location is harmless but unusable; the real
+      # bucket is wired up as a second, actually-default location right
+      # after, via the prompts below.
+      invenio-cli services setup --no-demo-data
+
+      echo ""
+      echo "This instance stores digital objects on S3 (Postgres/OpenSearch"
+      echo "stay on local EBS via Docker volumes). Point this experiment"
+      echo "instance at a TEST/SNAPSHOT bucket -- NOT the live production"
+      echo "bucket, to avoid writing test uploads into production storage."
+      echo ""
+      read -rp    "S3 bucket name (e.g. caltechauthors-gunicorn-test): " S3_BUCKET
+      read -rp    "S3 region (blank if not applicable): "                S3_REGION_NAME
+      read -rp    "S3 endpoint URL (blank for AWS S3 itself): "          S3_ENDPOINT_URL
+      read -rp    "S3 access key ID: "                                   INVENIO_S3_ACCESS_KEY_ID
+      read -rsp   "S3 secret access key: "                                INVENIO_S3_SECRET_ACCESS_KEY
+      echo ""
+
+      echo "Writing nginx site config"
+      cat <<EOT >"${INSTANCE_NAME}_nginx.conf"
+
+      server {
+        server_name _;
+        add_header Strict-Transport-Security "max-age=15768000";
+        add_header X-Request-ID \$request_id;
+
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_http_version 1.1;
+
+        location / {
+          proxy_pass http://127.0.0.1:5000;
+          proxy_set_header Host \$host;
+          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto \$scheme;
+          proxy_set_header X-Request-ID \$request_id;
+          proxy_hide_header X-Session-ID;
+          proxy_hide_header X-User-ID;
+          client_max_body_size 100m;
+        }
+        location /api {
+          proxy_pass http://127.0.0.1:5001;
+          proxy_set_header Host \$host;
+          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto \$scheme;
+          proxy_set_header X-Request-ID \$request_id;
+          proxy_hide_header X-Session-ID;
+          proxy_hide_header X-User-ID;
+          client_max_body_size 100m;
+        }
+        location ~ /api/records/.+/draft/files/.+/content {
+          gzip off;
+          proxy_pass http://127.0.0.1:5001;
+          proxy_set_header Host \$host;
+          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto \$scheme;
+          proxy_set_header X-Request-ID \$request_id;
+          proxy_hide_header X-Session-ID;
+          proxy_hide_header X-User-ID;
+          client_max_body_size 500G;
+        }
+      }
+
+      server {
+        server_name _;
+        add_header Strict-Transport-Security "max-age=15768000";
+        listen 80;
+        listen [::]:80;
+      }
+
+      server {
+        server_name _;
+        include snippets/self-signed.conf;
+        include snippets/ssl-params.conf;
+        add_header Strict-Transport-Security "max-age=15768000";
+        listen 443 ssl;
+        listen [::]:443 ssl;
+      }
+
+      EOT
+      sudo mv -v "${INSTANCE_NAME}_nginx.conf" "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo chown root:root "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo chmod 664 "/etc/nginx/sites-available/${INSTANCE_NAME}.conf"
+      sudo ln -sf "/etc/nginx/sites-available/${INSTANCE_NAME}.conf" "/etc/nginx/sites-enabled/${INSTANCE_NAME}.conf"
+      sudo rm -f "/etc/nginx/sites-enabled/default"
+      sudo systemctl restart nginx
+
+      echo "Writing .env"
+      INVENIO_SECRET_KEY="$(makepasswd -char 64)"
+      cat <<EOT >.env
+      INVENIO_SECRET_KEY=${INVENIO_SECRET_KEY}
+      INVENIO_LOGGING_CONSOLE_LEVEL=INFO
+      FLASK_ENV=production
+      INVENIO_S3_ACCESS_KEY_ID=${INVENIO_S3_ACCESS_KEY_ID}
+      INVENIO_S3_SECRET_ACCESS_KEY=${INVENIO_S3_SECRET_ACCESS_KEY}
+      S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      S3_REGION_NAME=${S3_REGION_NAME}
+      EOT
+      chmod 600 .env
+
+      echo "Pointing the default file storage location at s3://${S3_BUCKET}"
+      set -a; source .env; set +a
+      uv run --no-sync invenio files location create --default \
+        rdm-data "s3://${S3_BUCKET}" --default
+
+      echo "Writing gunicorn config files (workers/threads matching prod: UI 2x2, REST 4x2)"
+      cat <<EOT >gunicorn_ui.conf.py
+      bind = "0.0.0.0:5000"
+      workers = 2
+      threads = 2
+      worker_class = "gthread"
+      timeout = 60
+      loglevel = "info"
+      accesslog = "-"
+      errorlog = "-"
+      EOT
+
+      cat <<EOT >gunicorn_rest.conf.py
+      bind = "0.0.0.0:5001"
+      workers = 4
+      threads = 2
+      worker_class = "gthread"
+      timeout = 60
+      loglevel = "info"
+      accesslog = "-"
+      errorlog = "-"
+      EOT
+
+      echo "Writing systemd unit files (Gunicorn)"
+      cat <<EOT >rdm.service
+      [Unit]
+      Description=Launch InvenioRDM Web Interface (Gunicorn, UI)
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=journal
+      StandardError=journal
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/home/ubuntu/.local/bin/uv run --no-sync gunicorn -c gunicorn_ui.conf.py invenio_app.wsgi_ui:application
+
+      [Install]
+      WantedBy=multi-user.target
+      EOT
+
+      cat <<EOT >rdm_rest.service
+      [Unit]
+      Description=Launch InvenioRDM REST API (Gunicorn)
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=journal
+      StandardError=journal
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/home/ubuntu/.local/bin/uv run --no-sync gunicorn -c gunicorn_rest.conf.py invenio_app.wsgi_rest:application
+
+      [Install]
+      WantedBy=multi-user.target
+      EOT
+
+      cat <<EOT >rdm_celery.service
+      [Unit]
+      Description=Launch InvenioRDM Celery Worker
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      StandardOutput=journal
+      StandardError=journal
+      WorkingDirectory=/Sites/${INSTANCE_NAME}
+      EnvironmentFile=/Sites/${INSTANCE_NAME}/.env
+      ExecStart=/home/ubuntu/.local/bin/uv run --no-sync celery --app invenio_app.celery worker --beat --events --loglevel INFO
+
+      [Install]
+      WantedBy=multi-user.target
+      EOT
+
+      sudo mv -v rdm.service rdm_rest.service rdm_celery.service /etc/systemd/system/
+      sudo chown root:root /etc/systemd/system/rdm*.service
+      sudo chmod 664 /etc/systemd/system/rdm*.service
+      sudo systemctl daemon-reload
+      sudo systemctl enable rdm rdm_rest rdm_celery
+
+      cat <<EOT
+
+         Gunicorn RDM instance "${INSTANCE_NAME}" scaffolded at /Sites/${INSTANCE_NAME}
+         Digital objects: s3://${S3_BUCKET}  |  Postgres/OpenSearch: local EBS via Docker
+
+         Start:
+             cd /Sites/${INSTANCE_NAME}
+             invenio-cli services start
+             sudo systemctl start rdm_celery rdm_rest rdm nginx
+
+         Check:
+             invenio-cli services status
+             sudo systemctl status rdm_celery rdm_rest rdm nginx
+
+         Stop:
+             sudo systemctl stop nginx rdm rdm_rest rdm_celery
+             invenio-cli services stop
+
+      EOT
+    path: /usr/local/bin/setup_rdm_gunicorn.bash
+    owner: 'root:root'
+    permissions: '0775'

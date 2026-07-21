@@ -139,6 +139,38 @@ Like previous example access with the `multipass` shell command.
 A more complete exploration of running InvenioRDM is found in the
 [InvenioRDM-setup](https://caltechlibrary.github.io/cloud-init-examples/InvenioRDM-setup.html)
 
+The Granian vs Gunicorn RDM comparison VMs
+-------------------------------------------
+
+`invenio-rdm-13-granian-init.yaml` and `invenio-rdm-13-gunicorn-init.yaml`
+are a matched pair of cloud-init files for a controlled side-by-side
+evaluation of [Granian](https://github.com/emmett-framework/granian) and
+Gunicorn as replacements for uWSGI in InvenioRDM. Unlike the sizes above,
+these are meant for real AWS EC2 Launch Templates (created via `clasm`, not
+`multipass`), sized to match CaltechAUTHORS production:
+
+- Instance type: `m7i-flex.2xlarge`
+- EBS: 250GB — digital objects live on S3, so this volume only needs to hold
+  the Postgres and OpenSearch Docker volumes.
+
+Each file installs the base toolchain (uv, invenio-cli, Node 18 via nvm,
+Docker) at boot, then leaves a `setup_rdm_granian.bash` /
+`setup_rdm_gunicorn.bash` script in `/usr/local/bin` for you to run manually
+after connecting — this scaffolds an RDM v13 instance, pins
+`invenio-app-rdm` to the exact patch release running in production
+(13.1.2 as of 2026-07-21), and wires up systemd units and nginx to run
+under Granian or Gunicorn instead of uWSGI, with worker/thread counts
+matched to production's uWSGI tuning (UI 2×2, REST 4×2) so the comparison
+isolates the app-server choice.
+
+```shell
+    setup_rdm_granian.bash [INSTANCE_NAME] [TEMPLATE_VERSION] [RDM_PIN_VERSION]
+    setup_rdm_gunicorn.bash [INSTANCE_NAME] [TEMPLATE_VERSION] [RDM_PIN_VERSION]
+```
+
+The script will prompt for S3 bucket/region/endpoint/credentials — point
+these at a test/snapshot bucket, not the live production bucket.
+
 General purpose Bash scripts
 ----------------------------
 
