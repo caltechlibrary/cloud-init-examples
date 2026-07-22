@@ -19,7 +19,8 @@ packages:
   - python3-pip
   - pandoc
   - rsync
-  - mysql-server-8.0
+  - postgresql
+  - postgresql-contrib
   - libexpat1
   - apache2
   - apache2-utils

@@ -445,7 +445,7 @@ write_files:
           if [ -f "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz" ]; then
                 gunzip  "${BACKUP_DIR}/${INDEX_NAME}.data.json.gz"
                 elasticdump \
-                    --intput "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
+                    --input "${BACKUP_DIR}/${INDEX_NAME}.data.json" \
                     --output "http://localhost:9200/${INDEX_NAME}" \
                     --type data
           fi

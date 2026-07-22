@@ -145,7 +145,7 @@ write_files:
       #!/bin/bash
       cd
       git clone https://github.com/PostgREST/postgrest src/postgrest
-      cd src/postgres 
+      cd src/postgrest
       stack build --install-ghc --copy-bins --local-bin-path $HOME/bin
       cd
     path: /usr/local/sbin/06-postgrest-build.bash

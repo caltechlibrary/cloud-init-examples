@@ -24,7 +24,7 @@ package_upgrade: true
 write_files:
   - content: |
       #!/bin/bash
-      curl "https://caltechlibrary.github.io/dataset/installer.sh | sh
+      curl "https://caltechlibrary.github.io/dataset/installer.sh" | sh
     path: /usr/local/sbin/install-dataset.sh
     owner: root:root
     permissions: '0775'
@@ -33,7 +33,7 @@ packages:
   - tmux
   - micro
   - vim
-  - sqlite3-dev
+  - libsqlite3-dev
   - curl
   - shellcheck
   - pandoc

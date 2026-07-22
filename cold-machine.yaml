@@ -37,7 +37,7 @@ write_files:
   - content: |
       #!/bin/bash
       git clone https://github.com/PostgREST/postgrest /usr/local/src/postgrest
-      cd /usr/local/src/postgres && stack build --install-ghc --copy-bins --local-bin-path /usr/local/bin
+      cd /usr/local/src/postgrest && stack build --install-ghc --copy-bins --local-bin-path /usr/local/bin
       cd
     path: /usr/local/sbin/postgrest-build.bash
     owner: root:root
