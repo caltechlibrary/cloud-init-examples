@@ -15,18 +15,11 @@ MARKDOWN_PAGES =$(shell ls -1 *.md drafts/*.md | sed -E 's/\.md//g')
 
 HTML_PAGES = $(shell ls -1 *.md | sed -E 's/\.md/.html/g')
 
-build: CITATION.cff about.md $(HTML_PAGES) index.html about.html
+build: CITATION.cff $(HTML_PAGES) index.html about.html
 
 CITATION.cff: codemeta.json
 	@cat codemeta.json | sed -E   's/"@context"/"at__context"/g;s/"@type"/"at__type"/g;s/"@id"/"at__id"/g' >_codemeta.json
 	echo "" | pandoc --metadata title="Cite $(PROGRAM)" --metadata-file=_codemeta.json --template=codemeta-cff.tmpl >CITATION.cff
-
-about.html: about.md
-
-about.md: codemeta.json .FORCE
-	cat codemeta.json | sed -E 's/"@context"/"at__context"/g;s/"@type"/"at__type"/g;s/"@id"/"at__id"/g' >_codemeta.json
-	echo "" | pandoc --metadata-file=_codemeta.json --template codemeta-md.tmpl >about.md 2>/dev/null
-	if [ -f _codemeta.json ]; then rm _codemeta.json; fi
 
 index.html: README.md $(MARKDOWN_PAGES)
 	mv README.html index.html

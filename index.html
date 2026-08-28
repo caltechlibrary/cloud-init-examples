@@ -19,7 +19,7 @@
     <li><a href="LICENSE">LICENSE</a></li>
 <!--    <li><a href="INSTALL.html">INSTALL</a></li> -->
 <!--    <li><a href="user_manual.html">User Manual</a></li> -->
-    <li><a href="about.html">About</a></li>
+<!--    <li><a href="about.html">About</a></li> -->
     <!-- <li><a href="search.html">Search</a></li> -->
     <li><a href="https://github.com/caltechlibrary/cloud-init-examples">Code Repository</a></li>
 </ul>
@@ -162,6 +162,36 @@ command.</p>
 <pre class="shell"><code>    multipass shell</code></pre>
 <p>A more complete exploration of running InvenioRDM is found in the <a
 href="https://caltechlibrary.github.io/cloud-init-examples/InvenioRDM-setup.html">InvenioRDM-setup</a></p>
+<h2 id="the-granian-vs-gunicorn-rdm-comparison-vms">The Granian vs
+Gunicorn RDM comparison VMs</h2>
+<p><code>invenio-rdm-13-granian-init.yaml</code> and
+<code>invenio-rdm-13-gunicorn-init.yaml</code> are a matched pair of
+cloud-init files for a controlled side-by-side evaluation of <a
+href="https://github.com/emmett-framework/granian">Granian</a> and
+Gunicorn as replacements for uWSGI in InvenioRDM. Unlike the sizes
+above, these are meant for real AWS EC2 Launch Templates (created via
+<code>clasm</code>, not <code>multipass</code>), sized to match
+CaltechAUTHORS production:</p>
+<ul>
+<li>Instance type: <code>m7i-flex.2xlarge</code></li>
+<li>EBS: 250GB — digital objects live on S3, so this volume only needs
+to hold the Postgres and OpenSearch Docker volumes.</li>
+</ul>
+<p>Each file installs the base toolchain (uv, invenio-cli, Node 18 via
+nvm, Docker) at boot, then leaves a <code>setup_rdm_granian.bash</code>
+/ <code>setup_rdm_gunicorn.bash</code> script in
+<code>/usr/local/bin</code> for you to run manually after connecting —
+this scaffolds an RDM v13 instance, pins <code>invenio-app-rdm</code> to
+the exact patch release running in production (13.1.2 as of 2026-07-21),
+and wires up systemd units and nginx to run under Granian or Gunicorn
+instead of uWSGI, with worker/thread counts matched to production’s
+uWSGI tuning (UI 2×2, REST 4×2) so the comparison isolates the
+app-server choice.</p>
+<pre class="shell"><code>    setup_rdm_granian.bash [INSTANCE_NAME] [TEMPLATE_VERSION] [RDM_PIN_VERSION]
+    setup_rdm_gunicorn.bash [INSTANCE_NAME] [TEMPLATE_VERSION] [RDM_PIN_VERSION]</code></pre>
+<p>The script will prompt for S3 bucket/region/endpoint/credentials —
+point these at a test/snapshot bucket, not the live production
+bucket.</p>
 <h2 id="general-purpose-bash-scripts">General purpose Bash scripts</h2>
 <p>I have provided three Bash scripts for starting/launching, getting
 info and stopping your multipass VM.</p>
