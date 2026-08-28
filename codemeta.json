@@ -20,7 +20,7 @@
   "datePublished": "2026-07-22",
   "description": "This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.",
   "name": "cloud-init-examples",
-  "license": "https://caltechlibrary.github.io/cloud-init-examples/LICENSE",
+  "license": "https://software.library.caltech.edu/cloud-init-examples/LICENSE",
   "operatingSystem": [
     "Ubuntu",
     "macOS",

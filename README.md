@@ -137,7 +137,7 @@ Like previous example access with the `multipass` shell command.
 ```
 
 A more complete exploration of running InvenioRDM is found in the
-[InvenioRDM-setup](https://caltechlibrary.github.io/cloud-init-examples/InvenioRDM-setup.html)
+[InvenioRDM-setup](https://software.library.caltech.edu/cloud-init-examples/InvenioRDM-setup.html)
 
 The Granian vs Gunicorn RDM comparison VMs
 -------------------------------------------
