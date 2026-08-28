@@ -48,9 +48,6 @@ save:
 website: .FORCE
 	make -f website.mak
 
-publish: website .FORCE
-	./publish.bash
-
 refresh:
 	git fetch origin
 	git pull origin $(BRANCH)

@@ -6,3 +6,4 @@ src/*
 Sites/*
 .DS_Store
 *-local.yaml
+man
