@@ -1,45 +1,45 @@
 {
-    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
-    "@type": "SoftwareSourceCode",
-    "license": "https://caltechlibrary.github.io/cloud-init-examples/LICENSE",
-    "codeRepository": "https://github.com/caltechlibrary/cloud-init-examples",
-    "dateCreated": "2022-04-25",
-	"dateUpdated": "2023-05-29",
-	"dateModified": "2024-05-29",
-	"releaseNotes": "add invenio-rdm-machine.bash, updated invenio-rdm-init.yaml",
-    "issueTracker": "https://github.com/caltechlibrary/cloud-init-examples/issues",
-    "name": "cloud-init-examples",
-    "version": "0.0.10",
-    "description": "This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.",
-    "developmentStatus": "concept",
-    "programmingLanguage": [
-        "Bash",
-        "YAML"
-    ],
-    "runtimePlatform": [
-        "multipass VM"
-    ],
-    "operatingSystem": [
-        "Ubuntu",
-        "macOS",
-        "Windows"
-    ],
-    "softwareRequirements": [
-        "multipass",
-        "A rdp remote desktop viewer",
-        "Windows requires Windows WSL"
-    ],
-    "author": [
-        {
-            "@type": "Person",
-            "@id": "https://orcid.org/0000-0003-0900-6903",
-            "givenName": "R. S.",
-            "familyName": "Doiel",
-            "email": "rsdoiel@caltech.edu",
-            "affiliation": {
-                "@type": "Organization",
-                "name": "Caltech Library"
-            }
-        }
-    ]
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "type": "SoftwareSourceCode",
+  "codeRepository": "https://github.com/caltechlibrary/cloud-init-examples",
+  "author": [
+    {
+      "id": "https://orcid.org/0000-0003-0900-6903",
+      "type": "Person",
+      "givenName": "R. S.",
+      "familyName": "Doiel",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Caltech Library"
+      },
+      "email": "rsdoiel@caltech.edu"
+    }
+  ],
+  "dateCreated": "2022-04-25",
+  "dateModified": "2026-07-22",
+  "datePublished": "2026-07-22",
+  "description": "This is a collection of Bash scripts and cloud-init YAML files to be used with multipass for generating virtual machines useful for software development in libraries and archives.",
+  "name": "cloud-init-examples",
+  "license": "https://caltechlibrary.github.io/cloud-init-examples/LICENSE",
+  "operatingSystem": [
+    "Ubuntu",
+    "macOS",
+    "Windows"
+  ],
+  "programmingLanguage": [
+    "Bash",
+    "YAML"
+  ],
+  "runtimePlatform": [
+    "multipass VM"
+  ],
+  "softwareRequirements": [
+    "multipass",
+    "A rdp remote desktop viewer",
+    "Windows requires Windows WSL"
+  ],
+  "version": "0.0.11",
+  "developmentStatus": "concept",
+  "issueTracker": "https://github.com/caltechlibrary/cloud-init-examples/issues",
+  "releaseNotes": "- move stale Invenio RDM YAML init files to depreciated\n- update remaining YAML init files in root repository for Ubuntu LTS release (26.04, 24.04, 22.04)"
 }
